@@ -1,8 +1,3 @@
-#define I
-#define 
-#define RR
-#define RR
-
 enum flag {TRANSMITTER, RECEIVER};
 
 int llopen(int porta, flag);
