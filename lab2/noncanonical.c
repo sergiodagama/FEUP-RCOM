@@ -109,6 +109,8 @@ int main(int argc, char** argv)
     unsigned char rSET[TRAMA_SIZE];
     int idx = 0;
 
+    //sleep(20); sleep para testar o time out do writer
+
     while (!STOP) {       /* loop for input */
       res = read(fd,&rSET[idx],1);  
 
