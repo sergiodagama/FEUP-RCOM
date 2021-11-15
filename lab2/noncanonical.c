@@ -121,7 +121,7 @@ int main(int argc, char** argv)
       else 
         idx = 0; //volta ao início?
       
-      if (idx == 5) STOP = TRUE;
+      if (idx == TRAMA_SIZE) STOP = TRUE;
     }
 
     printf("All OK on receiver!\n");
@@ -133,7 +133,36 @@ int main(int argc, char** argv)
     if(writeUA(fd) < 0)
       perror("Error writing UA\n");
 
-//     sleep(1);
+    sleep(1);
+    printf("\n");
+
+  //colocar depois em ciclo
+    //Rececao do I
+    unsigned char rI[TRAMA_I_SIZE(5)];
+    int index = 0;
+
+    STOP = FALSE;
+
+    while (!STOP) {       /* loop for input */
+      res = read(fd,&rI[index],1);  
+
+      printf("0x%x : %d\n", rI[index], res);
+
+      //Check se os valores são iguais aos expected -> se sim continua normalmente se não vai mudar o idx para repetir leitura
+
+      index++;
+
+      //Fazer check I -> e corrigir problema do size dos vectors
+
+      // if(checkSETByteRecieved(rSET[index], index) == TRUE) //Depois a state machine vai ligar aqui para garantir que envia outra vez se der erro
+      //   index++;
+      // else 
+      //   index = 0; //volta ao início?
+      
+      if (index == 11) STOP = TRUE;
+    }
+
+    printf("I'm here\n");
 
     tcsetattr(fd,TCSANOW,&oldtio);
     close(fd);

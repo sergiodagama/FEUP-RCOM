@@ -51,7 +51,16 @@ int checkUAByteRecieved(unsigned char byte_recieved, int idx){
   return is_OK;
 }
 
+int writeI(int fd, unsigned char *I, int size){
+  int res, i = 0;
+    while (i < size){
+      printf("Written - 0x%x\n", I[i]);
+      res = write(fd, &I[i], 1);
+      i++;
+    }
 
+    return res;
+}
 
 int main(int argc, char** argv)
 {
@@ -139,15 +148,23 @@ int main(int argc, char** argv)
     printf("All OK on sender!\n");
 
    
-       sleep(1);
-       
+    sleep(1);
+
+    const unsigned int data_size = 5; //para exemplo -> meter esta como global(?)
+    unsigned char D[5] = {0x10, 0x11, 0x12, 0x13, 0x14};
+    unsigned char BCC2 = BCC(BCC(BCC(D[1], D[2]), D[3]), D[4]); 
+    unsigned char Info[11] = {FLAG, A_EE, C_NS0, BCC(A_EE, C_NS0), D[0], D[1], D[2], D[3], D[4], BCC2, FLAG}; //resolver o size
+
+ //colocar depois em ciclo
+    //Enviar I
+    if(writeI(fd, Info, TRAMA_I_SIZE(data_size)) < 0)
+      perror("Error writing I\n");
+
+
     if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) {
       perror("tcsetattr");
       exit(-1);
     }
-
-
-
 
     close(fd);
     return 0;
