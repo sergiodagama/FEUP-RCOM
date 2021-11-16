@@ -7,6 +7,7 @@
 #include <stdio.h>
 
 #include "macrosLD.h"
+#include "alarme.c"
 
 #define BAUDRATE B38400
 #define MODEMDEVICE "/dev/ttyS1"
@@ -15,6 +16,8 @@
 #define TRUE 1
 
 volatile int STOP=FALSE;
+
+extern int flag, connect_attempt; 
 
 unsigned char SET[TRAMA_SIZE] = {FLAG, A_EE, C_SET, BCC(A_EE, C_SET), FLAG};
 
@@ -110,30 +113,63 @@ int main(int argc, char** argv)
     }
 
     printf("New termios structure set\n");
+
+
+    signal(SIGALRM, atende);  // instala a rotina que atende interrupcao
+    siginterrupt(SIGALRM, 1); // quando o sinal SIGALRM é apanhado, provoca uma interrupção no read()
     
-
-    //Enviar o SET
-    if(writeSET(fd) < 0)
-      perror("Error writing SET\n");
-   
-   //Rececao do UA
-   
     unsigned char rUA[TRAMA_SIZE];
-    int idx = 0;
+    int idx;
 
-    while (!STOP) {       /* loop for input */
-      res = read(fd,&rUA[idx],1);  
+    connect_attempt = 1;
 
-      printf("0x%x : %d\n", rUA[idx], res);
+    while(!STOP){
+      //Enviar o SET
 
-      //Check se os valores são iguais aos expected -> se sim continua normalmente se não vai mudar o idx para repetir leitura
+      if (connect_attempt > 3){
+        printf("Sender gave up, attempts exceded\n");
+        return 1;
+      }
 
-      if(checkUAByteRecieved(rUA[idx], idx) == TRUE) //Depois a state machine vai ligar aqui
-        idx++;
-      else 
-        idx = 0; //volta ao início?
-      
-      if (idx == 5) STOP = TRUE;
+      if(writeSET(fd) < 0)
+        perror("Error writing SET\n");
+
+
+      //printf("here after write\n");
+
+    
+      //Rececao do UA
+      idx = 0;
+      alarm(3);
+      flag = 0;
+
+      while (!STOP) {       /* loop for input */
+
+        //printf("before read\n");
+        if ((res = read(fd,&rUA[idx],1)) < 0){
+          if (flag == 1){
+            printf("Timed Out\n");
+            break;
+          }
+          else{
+            perror("Read failed\n");
+          }
+        }
+
+        printf("0x%x : %d\n", rUA[idx], res);
+
+        //Check se os valores são iguais aos expected -> se sim continua normalmente se não vai mudar o idx para repetir leitura
+
+        if(checkUAByteRecieved(rUA[idx], idx) == TRUE) //Depois a state machine vai ligar aqui
+          idx++;
+        else 
+          idx = 0; //volta ao início?
+        
+        if (idx == 5) STOP = TRUE;
+      }
+
+      alarm(0); //Reset alarm
+
     }
 
     printf("All OK on sender!\n");
