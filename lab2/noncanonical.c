@@ -105,35 +105,50 @@ int main(int argc, char** argv)
       exit(-1);
     }
 
-  //Rececao do SET
+  
     unsigned char rSET[TRAMA_SIZE];
     int idx = 0;
+    int CONNECTED=FALSE;
 
-    //sleep(20); sleep para testar o time out do writer
 
-    while (!STOP) {       /* loop for input */
-      res = read(fd,&rSET[idx],1);  
+    //while - open connection
+    while(!CONNECTED){
 
-      printf("0x%x : %d\n", rSET[idx], res);
+      //Receção do SET
+      while (!STOP) {       /* loop for input */
+        res = read(fd,&rSET[idx],1);  
 
-      //Check se os valores são iguais aos expected -> se sim continua normalmente se não vai mudar o idx para repetir leitura
+        printf("0x%x : %d\n", rSET[idx], res);
 
-      if(checkSETByteRecieved(rSET[idx], idx) == TRUE) //Depois a state machine vai ligar aqui para garantir que envia outra vez se der erro
+        //Check se os valores são iguais aos expected -> se sim continua normalmente se não vai mudar o idx para repetir leitura
+
+        if (idx == 5) STOP = TRUE;
+
         idx++;
-      else 
-        idx = 0; //volta ao início?
-      
-      if (idx == 5) STOP = TRUE;
-    }
+      }
+      STOP = FALSE;
+
+      if(rSET[2] == C_NS0) { //é trama de INFO
+          CONNECTED = TRUE;
+      }
+
+      if(checkSETRecieved(rSET[idx], idx) == TRUE) 
 
     printf("All OK on receiver!\n");
 
     sleep(2);
     printf("\n");
 
-  //Envio de UA
+    //Envio de UA
     if(writeUA(fd) < 0)
       perror("Error writing UA\n");
+
+      //While para receber o I
+
+  }
+
+  //while data receive + acknoledge
+  
 
 //     sleep(1);
 

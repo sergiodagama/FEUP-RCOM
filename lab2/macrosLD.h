@@ -24,19 +24,28 @@
       BCC1 - Campo de Protecção (cabeçalho)
 */
 
-#define TRAMA_SIZE 5
+#define MAX_ATTEMPS 3
+#define ALARM_SECONDS 3
+#define MAX_SIZE 200
+
 //I
 
 #define FLAG 0x7E       //01111110 - valor dito nos slides
 #define A_EE 0x03       //comandos Enviados pelo Emissor (EE) e Respostas enviadas pelo Recetor
 #define A_ER 0x01       //comandos Enviados pelo Recetor (ER) e Respostas enviadas pelo Emissor
 
+#define C_NS0 0x00
+#define C_NS1 0x40
+
 //S ou U
 
 #define C_SET 0x03
 #define C_DISC 0x0B
 #define C_UA 0x07
-//#define C_RR 0x_5  //What is R = N(r)??
-//#define C_REJ 0x_1
+
+#define C_RR_NS0 0x05
+#define C_RR_NS1 0x85
+#define C_REJ_NS0 0x01
+#define C_REJ_NS1 0x81
 
 #define BCC(A, C) A^C
