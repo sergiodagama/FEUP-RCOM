@@ -25,8 +25,10 @@
       BCC1 - Campo de Protecção (cabeçalho)
 */
 
-#define TRAMA_SIZE 5
-#define TRAMA_I_SIZE(data_size) 6 + data_size
+#define MAX_ATTEMPS 3
+#define ALARM_SECONDS 3
+#define MAX_SIZE 200
+
 //I
 
 #define FLAG 0x7E       //01111110 - valor dito nos slides

@@ -105,66 +105,41 @@ int main(int argc, char** argv)
       exit(-1);
     }
 
-  //Rececao do SET
+  
     unsigned char rSET[TRAMA_SIZE];
     int idx = 0;
+    int CONNECTED=FALSE;
 
-    while (!STOP) {       /* loop for input */
-      res = read(fd,&rSET[idx],1);  
 
-      printf("0x%x : %d\n", rSET[idx], res);
+    //while - open connection
+    while(!CONNECTED){
 
-      //Check se os valores são iguais aos expected -> se sim continua normalmente se não vai mudar o idx para repetir leitura
+      //Receção do SET
+      while (!STOP) {       /* loop for input */
+        res = read(fd,&rSET[idx],1);  
 
-      if(checkSETByteRecieved(rSET[idx], idx) == TRUE) //Depois a state machine vai ligar aqui para garantir que envia outra vez se der erro
+        printf("0x%x : %d\n", rSET[idx], res);
+
+        //Check se os valores são iguais aos expected -> se sim continua normalmente se não vai mudar o idx para repetir leitura
+
+        if (idx == 5) STOP = TRUE;
+
         idx++;
-      else 
-        idx = 0; //volta ao início?
-      
-      if (idx == TRAMA_SIZE) STOP = TRUE;
-    }
+      }
+      STOP = FALSE;
+
+      if(rSET[2] == C_NS0) { //é trama de INFO
+          CONNECTED = TRUE;
+      }
+
+      if(checkSETRecieved(rSET[idx], idx) == TRUE) 
 
     printf("All OK on receiver!\n");
 
     sleep(2);
     printf("\n");
 
-  //Envio de UA
+    //Envio de UA
     if(writeUA(fd) < 0)
       perror("Error writing UA\n");
 
-    sleep(1);
-    printf("\n");
-
-  //colocar depois em ciclo
-    //Rececao do I
-    unsigned char rI[TRAMA_I_SIZE(5)];
-    int index = 0;
-
-    STOP = FALSE;
-
-    while (!STOP) {       /* loop for input */
-      res = read(fd,&rI[index],1);  
-
-      printf("0x%x : %d\n", rI[index], res);
-
-      //Check se os valores são iguais aos expected -> se sim continua normalmente se não vai mudar o idx para repetir leitura
-
-      index++;
-
-      //Fazer check I -> e corrigir problema do size dos vectors
-
-      // if(checkSETByteRecieved(rSET[index], index) == TRUE) //Depois a state machine vai ligar aqui para garantir que envia outra vez se der erro
-      //   index++;
-      // else 
-      //   index = 0; //volta ao início?
-      
-      if (index == 11) STOP = TRUE;
-    }
-
-    printf("I'm here\n");
-
-    tcsetattr(fd,TCSANOW,&oldtio);
-    close(fd);
-    return 0;
-}
