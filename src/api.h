@@ -4,7 +4,7 @@
 
 enum flag {TRANSMITTER, RECEIVER};
 
-//int llopen(int porta, flag);
+int llopen(int porta, enum flag flg);
 
 int llread(int fd, char * buffer);
 
