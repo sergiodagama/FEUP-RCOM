@@ -153,7 +153,7 @@ int main(int argc, char** argv)
     const unsigned int data_size = 5; //para exemplo -> meter esta como global(?)
     unsigned char D[5] = {0x10, 0x11, 0x12, 0x13, 0x14};
     unsigned char BCC2 = BCC(BCC(BCC(D[1], D[2]), D[3]), D[4]); 
-    unsigned char Info[11] = {FLAG, A_EE, C_NS0, BCC(A_EE, C_NS0), D[0], D[1], D[2], D[3], D[4], BCC2, FLAG}; //resolver o size
+    unsigned char Info[11] = {FLAG, A_EE, C_NS0, BCC(A_EE, C_NS0), D[0], D[1], D[2], D[3], D[4], BCC2, FLAG};  //resolver o size
 
  //colocar depois em ciclo
     //Enviar I
