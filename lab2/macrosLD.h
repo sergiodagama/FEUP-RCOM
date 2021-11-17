@@ -25,18 +25,32 @@
       BCC1 - Campo de Protecção (cabeçalho)
 */
 
+#define FALSE 0
+#define TRUE 1
+
 #define MAX_ATTEMPS 3
 #define ALARM_SECONDS 3
 #define MAX_SIZE 200
+#define SU_TRAMA_SIZE 5
 
-//I
+//TypeMsg Defines
+
+#define TM_SET 0
+#define TM_UA 1
+#define TM_I 2
+#define TM_RR 3
+#define TM_REJ 4
+#define TM_DISC_EE 5 //Disconnect enviado pelo emissor
+#define TM_DISC_ER 6 //Disconnect enviado pelo recetor
+
+//Defines of Message content
 
 #define FLAG 0x7E       //01111110 - valor dito nos slides
 #define A_EE 0x03       //comandos Enviados pelo Emissor (EE) e Respostas enviadas pelo Recetor
 #define A_ER 0x01       //comandos Enviados pelo Recetor (ER) e Respostas enviadas pelo Emissor
 
-#define C_NS0 0x00
-#define C_NS1 0x40
+#define C_I_NS0 0x00
+#define C_I_NS1 0x40
 
 //S ou U
 
