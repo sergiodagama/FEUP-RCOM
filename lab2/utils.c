@@ -10,3 +10,8 @@ int writeData(int fd, unsigned char *trama, int size){
 
     return res;
 }
+
+void printTramaRead(unsigned char *trama, int size){
+    for(int i = 0; i < SU_TRAMA_SIZE; i++)
+          printf("  r - 0x%x\n", trama[i]); 
+}

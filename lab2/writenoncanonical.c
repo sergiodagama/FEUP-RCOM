@@ -119,7 +119,7 @@ int main(int argc, char** argv)
         return 1;
       }
 
-      printf("Attempt %d\n - Sending SET...\n", connect_attempt);
+      printf("Attempt %d\n - Sending SET\n", connect_attempt);
       if(writeData(fd, SET, SU_TRAMA_SIZE) < 0)
         perror("    Error writing SET\n");
 
@@ -130,7 +130,7 @@ int main(int argc, char** argv)
       alarm(ALARM_SECONDS);
       flag = 0;
 
-      printf(" - Receiving UA\n");
+      printf(" - Receiving UA...\n");
       while (!STOP) {       /* loop for input */
 
         //printf("before read\n");
@@ -157,8 +157,8 @@ int main(int argc, char** argv)
       alarm(0); //Reset alarm
 
       if (STOP == TRUE){
-         for(int i = 0; i < SU_TRAMA_SIZE; i++)
-          printf("  r - 0x%x : %d\n", rUA[i], res); //só faz print se valor correto
+         //só faz print se valor correto
+         printTramaRead(rUA, SU_TRAMA_SIZE);
       }
     }
 

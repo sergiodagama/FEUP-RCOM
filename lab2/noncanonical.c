@@ -104,11 +104,9 @@ int main(int argc, char** argv)
     while(!CONNECTED){
 
       //Receção do SET
-      printf(" - Receiving SET\n");
+      printf(" - Receiving SET...\n");
       while (!STOP) {       /* loop for input */
         res = read(fd,&rSET[idx],1);  
-
-        printf("  r - 0x%x : %d\n", rSET[idx], res);
 
         //Check se os valores são iguais aos expected -> se sim continua normalmente se não vai mudar o idx para repetir leitura
          if(checkSETByteRecieved(rSET[idx], idx) == TRUE) 
@@ -117,6 +115,11 @@ int main(int argc, char** argv)
           idx = 0; //volta ao início?
 
         if (idx == 5) STOP = TRUE;
+      }
+
+      if (STOP == TRUE){
+         //só faz print se valor correto
+         printTramaRead(rSET, SU_TRAMA_SIZE);
       }
 
       STOP = FALSE;
