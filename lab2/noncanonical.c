@@ -7,6 +7,7 @@
 #include <stdio.h>
 
 #include "macrosLD.h"
+#include "utils.c"
 
 #define BAUDRATE B38400
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
@@ -36,18 +37,6 @@ int checkSETByteRecieved(unsigned char byte_recieved, int idx){
   }
 
   return is_OK;
-}
-
-int writeUA(int fd){
-
-    int res, i = 0;
-    while (i < SU_TRAMA_SIZE){
-      printf("Written - 0x%x\n", UA[i]);
-      res = write(fd, &UA[i], 1);
-      i++;
-    }
-
-    return res;
 }
 
 int main(int argc, char** argv)
@@ -115,10 +104,11 @@ int main(int argc, char** argv)
     while(!CONNECTED){
 
       //Receção do SET
+      printf(" - Receiving SET\n");
       while (!STOP) {       /* loop for input */
         res = read(fd,&rSET[idx],1);  
 
-        printf("0x%x : %d\n", rSET[idx], res);
+        printf("  r - 0x%x : %d\n", rSET[idx], res);
 
         //Check se os valores são iguais aos expected -> se sim continua normalmente se não vai mudar o idx para repetir leitura
          if(checkSETByteRecieved(rSET[idx], idx) == TRUE) 
@@ -131,14 +121,15 @@ int main(int argc, char** argv)
 
       STOP = FALSE;
 
-    printf("All OK on receiver!\n");
+    printf("\nAll OK on receiver!\n");
 
     sleep(2);
     printf("\n");
 
     //Envio de UA
-    if(writeUA(fd) < 0)
-      perror("Error writing UA\n");
+    printf(" - Sending UA\n");
+    if(writeData(fd, UA, SU_TRAMA_SIZE) < 0)
+      perror("    Error writing UA\n");
 
     //While para receber o I
     CONNECTED = TRUE;

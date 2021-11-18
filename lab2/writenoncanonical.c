@@ -8,6 +8,7 @@
 
 #include "macrosLD.h"
 #include "alarme.c"
+#include "utils.c"
 
 #define BAUDRATE B38400
 #define MODEMDEVICE "/dev/ttyS1"
@@ -20,18 +21,6 @@ volatile int STOP=FALSE;
 extern int flag, connect_attempt; 
 
 unsigned char SET[SU_TRAMA_SIZE] = {FLAG, A_EE, C_SET, BCC(A_EE, C_SET), FLAG};
-
-int writeData(int fd, unsigned char *trama, int size){
-  int res, i = 0;
-    while (i < size){
-      printf("Written - 0x%x\n", trama[i]);
-      res = write(fd, &trama[i], 1);
-      i++;
-    }
-
-    return res;
-}
-
 
 int checkUAByteRecieved(unsigned char byte_recieved, int idx){
   int is_OK = FALSE;
@@ -130,29 +119,30 @@ int main(int argc, char** argv)
         return 1;
       }
 
+      printf("Attempt %d\n - Sending SET...\n", connect_attempt);
       if(writeData(fd, SET, SU_TRAMA_SIZE) < 0)
-        perror("Error writing SET\n");
+        perror("    Error writing SET\n");
 
+      printf("\n");
     
       //Rececao do UA
       idx = 0;
       alarm(ALARM_SECONDS);
       flag = 0;
 
+      printf(" - Receiving UA\n");
       while (!STOP) {       /* loop for input */
 
         //printf("before read\n");
         if ((res = read(fd,&rUA[idx],1)) < 0){
           if (flag == 1){
-            printf("Timed Out\n");
+            printf("    Timed Out\n\n");
             break;
           }
           else{
-            perror("Read failed\n");
+            perror("    Read failed\n\n");
           }
         }
-
-        printf("0x%x : %d\n", rUA[idx], res);
 
         //Check se os valores são iguais aos expected -> se sim continua normalmente se não vai mudar o idx para repetir leitura
 
@@ -166,9 +156,13 @@ int main(int argc, char** argv)
 
       alarm(0); //Reset alarm
 
+      if (STOP == TRUE){
+         for(int i = 0; i < SU_TRAMA_SIZE; i++)
+          printf("  r - 0x%x : %d\n", rUA[i], res); //só faz print se valor correto
+      }
     }
 
-    printf("All OK on sender!\n");
+    printf("\nAll OK on sender!\n");
 
    
     sleep(1);
