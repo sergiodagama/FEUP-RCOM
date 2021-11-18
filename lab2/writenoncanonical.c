@@ -112,6 +112,9 @@ int main(int argc, char** argv)
 
       if (connect_attempt > MAX_ATTEMPS){
         printf("Sender gave up, attempts exceded\n");
+
+        flushAndClose(fd, &oldtio);
+
         return 1;
       }
 

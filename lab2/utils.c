@@ -25,6 +25,9 @@ int readData(int fd, int *flag, unsigned char *reader, int size){
 
         //printf("before read\n");
 
+        //quando o writer dá gave up, o reader fica preso aqui...
+        //vale a pena pensar numa maneira sobre como resolver isto??
+
         if ((res = read(fd,&reader[i],1)) < 0){
           if (flag == 1){
             printf("Timed Out\n");
@@ -167,4 +170,15 @@ int checkTramaReceived(unsigned char *trama, int size, int typeMsg){
 
 
   return is_OK;
+}
+
+void flushAndClose(int fd, struct termios *oldtio){
+    tcflush(fd, TCIOFLUSH);
+
+    if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) {
+      perror("tcsetattr");
+      exit(-1);
+    }
+
+    close(fd);
 }
