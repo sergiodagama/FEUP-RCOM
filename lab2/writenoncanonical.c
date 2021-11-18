@@ -217,6 +217,8 @@ int main(int argc, char** argv)
 
     // }
 
+    //while - disconnect
+
     if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) {
       perror("tcsetattr");
       exit(-1);
