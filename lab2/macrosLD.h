@@ -50,3 +50,9 @@
 #define C_REJ_NS1 0x81
 
 #define BCC(A, C) A^C
+
+unsigned char SET[SU_TRAMA_SIZE] = {FLAG, A_EE, C_SET, BCC(A_EE, C_SET), FLAG};
+unsigned char UA_E[SU_TRAMA_SIZE] = {FLAG, A_EE, C_UA, BCC(A_EE, C_DISC), FLAG};
+unsigned char UA_R[SU_TRAMA_SIZE] = {FLAG, A_ER, C_UA, BCC(A_ER, C_UA), FLAG}; 
+unsigned char DISC_E[SU_TRAMA_SIZE] = {FLAG, A_EE, C_DISC, BCC(A_EE, C_DISC), FLAG};
+unsigned char DISC_R[SU_TRAMA_SIZE] = {FLAG, A_ER, C_DISC, BCC(A_ER, C_DISC), FLAG};

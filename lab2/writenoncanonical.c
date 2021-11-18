@@ -20,7 +20,7 @@ volatile int STOP=FALSE;
 
 extern int flag, connect_attempt; 
 
-unsigned char SET[SU_TRAMA_SIZE] = {FLAG, A_EE, C_SET, BCC(A_EE, C_SET), FLAG};
+unsigned char buf_E[MAX_SIZE];
 
 int checkUAByteRecieved(unsigned char byte_recieved, int idx){
   int is_OK = FALSE;
@@ -42,7 +42,25 @@ int checkUAByteRecieved(unsigned char byte_recieved, int idx){
   return is_OK;
 }
 
+int checkDiscRByteRecieved(unsigned char byte_recieved, int idx){
+  int is_OK = FALSE;
 
+  
+  if((idx == 0 || idx == 4) && byte_recieved == FLAG){
+    is_OK = TRUE;
+  }
+  else if (idx == 1 && byte_recieved == A_ER){
+    is_OK = TRUE;
+  }
+  else if (idx == 2 && byte_recieved == C_DISC){
+    is_OK = TRUE;
+  }
+  else if (idx == 3 && byte_recieved == BCC(A_ER, C_DISC)){
+    is_OK = TRUE;
+  }
+
+  return is_OK;
+}
 
 int main(int argc, char** argv)
 {
@@ -106,7 +124,6 @@ int main(int argc, char** argv)
     signal(SIGALRM, atende);  // instala a rotina que atende interrupcao
     siginterrupt(SIGALRM, 1); // quando o sinal SIGALRM é apanhado, provoca uma interrupção no read()
     
-    unsigned char rUA[SU_TRAMA_SIZE];
     int idx;
 
     connect_attempt = 1;
@@ -134,7 +151,7 @@ int main(int argc, char** argv)
       while (!STOP) {       /* loop for input */
 
         //printf("before read\n");
-        if ((res = read(fd,&rUA[idx],1)) < 0){
+        if ((res = read(fd,&buf_E[idx],1)) < 0){
           if (flag == 1){
             printf("    Timed Out\n\n");
             break;
@@ -146,7 +163,7 @@ int main(int argc, char** argv)
 
         //Check se os valores são iguais aos expected -> se sim continua normalmente se não vai mudar o idx para repetir leitura
 
-        if(checkUAByteRecieved(rUA[idx], idx) == TRUE) //Depois a state machine vai ligar aqui
+        if(checkUAByteRecieved(buf_E[idx], idx) == TRUE) //Depois a state machine vai ligar aqui
           idx++;
         else 
           idx = 0; //volta ao início?
@@ -158,7 +175,7 @@ int main(int argc, char** argv)
 
       if (STOP == TRUE){
          //só faz print se valor correto
-         printTramaRead(rUA, SU_TRAMA_SIZE);
+         printTramaRead(buf_E, SU_TRAMA_SIZE);
       }
     }
 
@@ -167,6 +184,8 @@ int main(int argc, char** argv)
    
     sleep(1);
        
+
+    clean_buf(buf_E, MAX_SIZE);
 
     connect_attempt = 1;
     STOP = FALSE;
@@ -217,7 +236,70 @@ int main(int argc, char** argv)
 
     // }
 
+    //!!!!!!!!!!!!!!!!!!!!NEWWWWWW!!!!!!!!!!!!!!!!!!!!!!!!
     //while - disconnect
+    int DISCONNECT = FALSE, RECEIVED = FALSE, SENT = FALSE;
+    STOP = FALSE;
+
+    connect_attempt = 1;
+
+    //starting to disconnect
+    while(!DISCONNECT){
+
+      if(connect_attempt > 4){
+        printf("    Attempt %d", connect_attempt);
+        return 1;
+      }
+      //send DISC
+      printf(" - Sending DISC_E...\n");
+      
+      if(writeData(fd, DISC_E, SU_TRAMA_SIZE) < 0){
+        perror("    Error writing DISC\n");
+      }
+
+        
+
+      //receive DISC
+      printf(" - Receiving DISC_R...\n");
+
+        
+      idx = 0;
+      alarm(ALARM_SECONDS);
+      flag = 0;
+      while(!DISCONNECT){
+        if((res = read(fd,&buf_E[idx],1))<0){
+          if (flag == 1){
+            printf("    Timed Out\n\n");
+            break;
+          }
+          else{
+            perror("    Read failed\n\n");
+          }
+        }
+
+        //Check se os valores são iguais aos expected -> se sim continua normalmente se não vai mudar o idx para repetir leitura
+        if(checkDiscRByteRecieved(buf_E[idx], idx) == TRUE) 
+          idx++;
+        else 
+          idx = 0; //volta ao início?
+
+        if (idx == 5) DISCONNECT = TRUE;
+      }
+      alarm(0);//TODO timeout
+
+    }
+  
+    if (DISCONNECT == TRUE)
+         printTramaRead(buf_E, SU_TRAMA_SIZE);//só faz print se valor correto
+
+      //send UA
+    printf(" - Sending UA_E...\n");
+
+    if (writeData(fd, UA_E, SU_TRAMA_SIZE) < 0)
+      perror("    Erro sending disconnect UA\n");
+
+    printf("    UA sent, Disconnecting... bye bye\n");
+    //!!!!!!!!!!!!!!!!!!!!NEWWWWWW!!!!!!!!!!!!!!!!!!!!!!!!
 
     if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) {
       perror("tcsetattr");
