@@ -20,26 +20,6 @@ extern int flag, connect_attempt;
 
 unsigned char SET[SU_TRAMA_SIZE] = {FLAG, A_EE, C_SET, BCC(A_EE, C_SET), FLAG};
 
-int checkUAByteRecieved(unsigned char byte_recieved, int idx){
-  int is_OK = FALSE;
-
-  
-  if((idx == 0 || idx == 4) && byte_recieved == FLAG){
-    is_OK = TRUE;
-  }
-  else if (idx == 1 && byte_recieved == A_ER){
-    is_OK = TRUE;
-  }
-  else if (idx == 2 && byte_recieved == C_UA){
-    is_OK = TRUE;
-  }
-  else if (idx == 3 && byte_recieved == BCC(A_ER, C_UA)){
-    is_OK = TRUE;
-  }
-
-  return is_OK;
-}
-
 int main(int argc, char** argv)
 {
     int fd,c, res;
