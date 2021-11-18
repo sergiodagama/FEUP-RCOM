@@ -15,7 +15,7 @@
 
 volatile int STOP=FALSE;
 
-unsigned char UA[TRAMA_SIZE] = {FLAG, A_ER, C_UA, BCC(A_ER, C_UA), FLAG}; 
+unsigned char UA[SU_TRAMA_SIZE] = {FLAG, A_ER, C_UA, BCC(A_ER, C_UA), FLAG}; 
 
 
 int checkSETByteRecieved(unsigned char byte_recieved, int idx){
@@ -41,7 +41,7 @@ int checkSETByteRecieved(unsigned char byte_recieved, int idx){
 int writeUA(int fd){
 
     int res, i = 0;
-    while (i < TRAMA_SIZE){
+    while (i < SU_TRAMA_SIZE){
       printf("Written - 0x%x\n", UA[i]);
       res = write(fd, &UA[i], 1);
       i++;
@@ -106,7 +106,7 @@ int main(int argc, char** argv)
     }
 
   
-    unsigned char rSET[TRAMA_SIZE];
+    unsigned char rSET[SU_TRAMA_SIZE];
     int idx = 0;
     int CONNECTED=FALSE;
 
@@ -121,18 +121,15 @@ int main(int argc, char** argv)
         printf("0x%x : %d\n", rSET[idx], res);
 
         //Check se os valores são iguais aos expected -> se sim continua normalmente se não vai mudar o idx para repetir leitura
+         if(checkSETByteRecieved(rSET[idx], idx) == TRUE) 
+          idx++;
+        else 
+          idx = 0; //volta ao início?
 
         if (idx == 5) STOP = TRUE;
-
-        idx++;
       }
+
       STOP = FALSE;
-
-      if(rSET[2] == C_NS0) { //é trama de INFO
-          CONNECTED = TRUE;
-      }
-
-      if(checkSETRecieved(rSET[idx], idx) == TRUE) 
 
     printf("All OK on receiver!\n");
 
@@ -143,7 +140,8 @@ int main(int argc, char** argv)
     if(writeUA(fd) < 0)
       perror("Error writing UA\n");
 
-      //While para receber o I
+    //While para receber o I
+    CONNECTED = TRUE;
 
   }
 
