@@ -7,4 +7,4 @@ writer: macrosLD.h
 		gcc -Wall writenoncanonical.c -o wr
 
 clean:
-		rm r wr
+		rm -f r wr

@@ -6,7 +6,7 @@
 
 void atende()                   // atende alarme
 {
-   printf("alarme ring ring\n");
+   printf(" - Alarme ring ring\n");
    flag=1;
    connect_attempt++;
 }

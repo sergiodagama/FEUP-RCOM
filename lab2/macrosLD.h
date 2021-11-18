@@ -27,8 +27,9 @@
 #define MAX_ATTEMPS 3
 #define ALARM_SECONDS 3
 #define MAX_SIZE 200
+#define SU_TRAMA_SIZE 5
 
-//I
+//Defines of Message content
 
 #define FLAG 0x7E       //01111110 - valor dito nos slides
 #define A_EE 0x03       //comandos Enviados pelo Emissor (EE) e Respostas enviadas pelo Recetor

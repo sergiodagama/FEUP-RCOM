@@ -8,6 +8,7 @@
 
 #include "macrosLD.h"
 #include "alarme.c"
+#include "utils.c"
 
 #define BAUDRATE B38400
 #define MODEMDEVICE "/dev/ttyS1"
@@ -19,19 +20,7 @@ volatile int STOP=FALSE;
 
 extern int flag, connect_attempt; 
 
-unsigned char SET[TRAMA_SIZE] = {FLAG, A_EE, C_SET, BCC(A_EE, C_SET), FLAG};
-
-int writeData(int fd, unsigned char *trama, int size){
-  int res, i = 0;
-    while (i < size){
-      printf("Written - 0x%x\n", trama[i]);
-      res = write(fd, &trama[i], 1);
-      i++;
-    }
-
-    return res;
-}
-
+unsigned char SET[SU_TRAMA_SIZE] = {FLAG, A_EE, C_SET, BCC(A_EE, C_SET), FLAG};
 
 int checkUAByteRecieved(unsigned char byte_recieved, int idx){
   int is_OK = FALSE;
@@ -117,7 +106,7 @@ int main(int argc, char** argv)
     signal(SIGALRM, atende);  // instala a rotina que atende interrupcao
     siginterrupt(SIGALRM, 1); // quando o sinal SIGALRM é apanhado, provoca uma interrupção no read()
     
-    unsigned char rUA[TRAMA_SIZE];
+    unsigned char rUA[SU_TRAMA_SIZE];
     int idx;
 
     connect_attempt = 1;
@@ -130,29 +119,30 @@ int main(int argc, char** argv)
         return 1;
       }
 
-      if(writeData(fd, SET, TRAMA_SIZE) < 0)
-        perror("Error writing SET\n");
+      printf("Attempt %d\n - Sending SET\n", connect_attempt);
+      if(writeData(fd, SET, SU_TRAMA_SIZE) < 0)
+        perror("    Error writing SET\n");
 
+      printf("\n");
     
       //Rececao do UA
       idx = 0;
       alarm(ALARM_SECONDS);
       flag = 0;
 
+      printf(" - Receiving UA...\n");
       while (!STOP) {       /* loop for input */
 
         //printf("before read\n");
         if ((res = read(fd,&rUA[idx],1)) < 0){
           if (flag == 1){
-            printf("Timed Out\n");
+            printf("    Timed Out\n\n");
             break;
           }
           else{
-            perror("Read failed\n");
+            perror("    Read failed\n\n");
           }
         }
-
-        printf("0x%x : %d\n", rUA[idx], res);
 
         //Check se os valores são iguais aos expected -> se sim continua normalmente se não vai mudar o idx para repetir leitura
 
@@ -166,9 +156,13 @@ int main(int argc, char** argv)
 
       alarm(0); //Reset alarm
 
+      if (STOP == TRUE){
+         //só faz print se valor correto
+         printTramaRead(rUA, SU_TRAMA_SIZE);
+      }
     }
 
-    printf("All OK on sender!\n");
+    printf("\nAll OK on sender!\n");
 
    
     sleep(1);
@@ -178,50 +172,52 @@ int main(int argc, char** argv)
     STOP = FALSE;
 
     //while - data transmission
-    while(!STOP){
+    // while(!STOP){
 
-      if (connect_attempt > MAX_ATTEMPS){
-        printf("Sender gave up, attempts exceded\n");
-        return 1;
-      }
+    //   if (connect_attempt > MAX_ATTEMPS){
+    //     printf("Sender gave up, attempts exceded\n");
+    //     return 1;
+    //   }
 
-      if(writeData(fd, SET, TRAMA_SIZE) < 0)
-        perror("Error writing SET\n");
+    //   if(writeData(fd, SET, SU_TRAMA_SIZE) < 0)
+    //     perror("Error writing SET\n");
 
     
-      //Rececao do UA
-      idx = 0;
-      alarm(ALARM_SECONDS);
-      flag = 0;
+    //   //Rececao do UA
+    //   idx = 0;
+    //   alarm(ALARM_SECONDS);
+    //   flag = 0;
 
-      while (!STOP) {       /* loop for input */
+    //   while (!STOP) {       /* loop for input */
 
-        //printf("before read\n");
-        if ((res = read(fd,&rUA[idx],1)) < 0){
-          if (flag == 1){
-            printf("Timed Out\n");
-            break;
-          }
-          else{
-            perror("Read failed\n");
-          }
-        }
+    //     //printf("before read\n");
+    //     if ((res = read(fd,&rUA[idx],1)) < 0){
+    //       if (flag == 1){
+    //         printf("Timed Out\n");
+    //         break;
+    //       }
+    //       else{
+    //         perror("Read failed\n");
+    //       }
+    //     }
 
-        printf("0x%x : %d\n", rUA[idx], res);
+    //     printf("0x%x : %d\n", rUA[idx], res);
 
-        //Check se os valores são iguais aos expected -> se sim continua normalmente se não vai mudar o idx para repetir leitura
+    //     //Check se os valores são iguais aos expected -> se sim continua normalmente se não vai mudar o idx para repetir leitura
 
-        if(checkUAByteRecieved(rUA[idx], idx) == TRUE) //Depois a state machine vai ligar aqui
-          idx++;
-        else 
-          idx = 0; //volta ao início?
+    //     if(checkUAByteRecieved(rUA[idx], idx) == TRUE) //Depois a state machine vai ligar aqui
+    //       idx++;
+    //     else 
+    //       idx = 0; //volta ao início?
         
-        if (idx == 5) STOP = TRUE;
-      }
+    //     if (idx == 5) STOP = TRUE;
+    //   }
 
-      alarm(0); //Reset alarm
+    //   alarm(0); //Reset alarm
 
-    }
+    // }
+
+    //while - disconnect
 
     if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) {
       perror("tcsetattr");
