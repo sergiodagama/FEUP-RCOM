@@ -35,6 +35,7 @@
 #define A_EE 0x03       //comandos Enviados pelo Emissor (EE) e Respostas enviadas pelo Recetor
 #define A_ER 0x01       //comandos Enviados pelo Recetor (ER) e Respostas enviadas pelo Emissor
 
+//I -> para saber se se recebe I tem de se verificar se é igual
 #define C_NS0 0x00
 #define C_NS1 0x40
 
