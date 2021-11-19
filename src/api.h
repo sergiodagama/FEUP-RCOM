@@ -18,4 +18,6 @@ int llclose(int fd);
 #define FLAG_XORED (VALUE_TO_XOR ^ FLAG)
 #define ESCAPE_XORED (VALUE_TO_XOR ^ ESCAPE)
 
-char* byteStuffing(size_t size, unsigned char data[], size_t* trimmed_size);
+char* byteStuffing(size_t size, unsigned char data[]);
+
+char* reverseByteStuffing(size_t size, unsigned char stuffed[]);
