@@ -10,6 +10,7 @@
 #include "alarme.c"
 #include "utils.c"
 #include "api.c"
+#include "file.c"
 
 #define BAUDRATE B38400
 #define MODEMDEVICE "/dev/ttyS1"
@@ -67,6 +68,8 @@ int main(int argc, char** argv)
 {
     int fd, c, res;
     FILE *img_fp;
+    img_info file;
+
 
     enum state state;
 
@@ -80,8 +83,26 @@ int main(int argc, char** argv)
       return 1;
     }
 
-    // img_fp = fopen("penguin.gif", "rb");
-    // file.
+
+    if( (img_fp = fopen("pinguim.gif", "rb")) <0){
+      printf("Error opening img\n");
+      return 1;
+    }
+    file.name = "pinguim.gif";
+    
+    if(get_file_size(&file, img_fp)<0){ //preenche o file->size
+      return 1;
+    }
+
+    if(read_file(&file, img_fp)<0){//preenche o file->data
+      return 1;
+    }
+
+
+
+    //criar control packet de START
+
+    //criar control packet de END
 
     signal(SIGALRM, atende);  // instala a rotina que atende interrupcao
     siginterrupt(SIGALRM, 1); // quando o sinal SIGALRM é apanhado, provoca uma interrupção no read()
@@ -272,4 +293,6 @@ int main(int argc, char** argv)
     //!!!!!!!!!!!!!!!!!!!!NEWWWWWW!!!!!!!!!!!!!!!!!!!!!!!!
 
     llclose(fd, TRANSMITTER);
+    free(file.data);
+    return 0;
 }
