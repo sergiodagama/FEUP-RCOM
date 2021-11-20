@@ -1,16 +1,39 @@
 #include "api.h"
 
-int llopen(int porta, enum flag flg){
+int llopen(char * porta, enum flag flg){
     if(flg == TRANSMITTER){
-        
+        if ((strcmp("/dev/ttyS0", porta)!=0) && 
+            (strcmp("/dev/ttyS1", porta)!=0) && 
+            (strcmp("/dev/ttyS10", porta)!=0)) {
+                printf("Usage:\tnserial SerialPort\n\tex: nserial /dev/ttyS1\n");
+                return -1;
+        }
+
+        return llopen_writer(porta);
         
     }
     
-    if(flg == RECEIVER){
+    else if(flg == RECEIVER){
+        if ((strcmp("/dev/ttyS0", porta)!=0) && 
+            (strcmp("/dev/ttyS1", porta)!=0) && 
+            (strcmp("/dev/ttyS11", porta)!=0)){
+                printf("Usage:\tnserial SerialPort\n\tex: nserial /dev/ttyS1\n");
+                return -1;
+             }
 
+        return llopen_reader(porta);
 
     }
+}
 
+int llclose(int fd, enum flag flg){
+    if(flg == TRANSMITTER){
+        return llclose_writer(fd); 
+    }
+    
+    else if(flg == RECEIVER){
+        return llclose_reader(fd);
+    }
 }
 
 char *reversByteStuffing(size_t size, unsigned char data[]){
@@ -70,31 +93,31 @@ char* byteStuffing(size_t size, unsigned char data[]){
     return stuffed; 
 }
 
-//just for testing purposes
-int main(){
+// //just for testing purposes
+// int main(){
 
-    unsigned char data[20] = {0x7e, 0x02, 0x03, 0x7e, 0x05, 0x06, 0x7e, 0x08, 0x7d, 0x10, 0x11, 0x12, 0x13, 0x14, 0x7e, 0x7d, 0x17, 0x7e, 0x19, 0x7e};
+//     unsigned char data[20] = {0x7e, 0x02, 0x03, 0x7e, 0x05, 0x06, 0x7e, 0x08, 0x7d, 0x10, 0x11, 0x12, 0x13, 0x14, 0x7e, 0x7d, 0x17, 0x7e, 0x19, 0x7e};
 
-    size_t size = sizeof data / sizeof data[0];
+//     size_t size = sizeof data / sizeof data[0];
     
-    printf("DATA BEFORE STUFFING\n");
-    printf("Data Size: %u\n\n", size);
+//     printf("DATA BEFORE STUFFING\n");
+//     printf("Data Size: %u\n\n", size);
 
-    printf("Trama: ");
-    for(int i = 0; i < sizeof(data); i++){
-        printf("%x ", data[i]);
-    }
-    printf("\n");
+//     printf("Trama: ");
+//     for(int i = 0; i < sizeof(data); i++){
+//         printf("%x ", data[i]);
+//     }
+//     printf("\n");
 
-    unsigned char* stuffed = byteStuffing(size, data);
+//     unsigned char* stuffed = byteStuffing(size, data);
 
-    if(stuffed == NULL) perror("Error: error on byteStuffing function");
+//     if(stuffed == NULL) perror("Error: error on byteStuffing function");
 
-    printf("\nDATA AFTER STUFFING\n");
+//     printf("\nDATA AFTER STUFFING\n");
 
-    printf("Trama: ");
-    for(int i = 0; i < size * 2; i++){
-        printf("%x ", *(stuffed + i));
-    }
-    return 0;
-}
+//     printf("Trama: ");
+//     for(int i = 0; i < size * 2; i++){
+//         printf("%x ", *(stuffed + i));
+//     }
+//     return 0;
+// }
