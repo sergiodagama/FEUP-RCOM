@@ -1,5 +1,5 @@
 //Funções gerais de escrita (e leitura) para a porta série.
-#include "utils.h"
+#include "buffer_utils.h"
 
 int writeData(int fd, unsigned char *trama, int size){
   int res, i = 0;

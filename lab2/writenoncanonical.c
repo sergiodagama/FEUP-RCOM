@@ -6,7 +6,7 @@
 #include <termios.h>
 #include <stdio.h>
 
-#include "macrosLD.h"
+
 #include "alarme.c"
 #include "utils.c"
 #include "api.c"
@@ -73,8 +73,16 @@ int main(int argc, char** argv)
 
     enum state state;
 
+    printf("\n----------TRANSMITTER----------\n\n");
+
     if (argc > 2){
       perror("Too many arguments\n");
+      return 1;
+    }
+
+    if (argc < 2){
+      perror("Too few arguments\n");
+      printf("Usage:\tnserial SerialPort\n\tex: nserial /dev/ttyS1\n");
       return 1;
     }
     
@@ -112,6 +120,8 @@ int main(int argc, char** argv)
     connect_attempt = 1;
 
     state = CONNECTING;
+
+    printf("\n----------CONNECTING----------\n\n");
 
     //while - open connection
     while(state == CONNECTING){
@@ -176,51 +186,92 @@ int main(int argc, char** argv)
 
     connect_attempt = 1;
 
+    printf("\n----------CONNECTED----------\n\n");
+
+    printf("\n---------SENDING DATA---------\n\n");
+
+    struct DataPacket {
+      unsigned char  C; //control value -> 1 for data
+      unsigned char  N;  //sequence number (module 255)
+      unsigned char L1;  // number of (k) data bytes (k = 256 * L2 + L1)
+      unsigned char L2;
+      unsigned char *data;  //data bytes
+    } DataPacket; 
+
+    struct ControlPacket {
+      unsigned char  C; //control value -> 2 for start, 3 for end
+      unsigned char T1;  //type of 0 -> file size, 1 -> file name
+      unsigned char L1;  //number of bytes of V field
+      unsigned char V1[];
+      unsigned char T2;  //type of 0 -> file size, 1 -> file name
+      unsigned char L2;  //number of bytes of V field
+      unsigned char V2[];
+    } ControlPacket;
+
+    ControlPacket start;
+
+    start.C = 2;
+    start.T1 = 0;
+    start.L1 = sizeof(img_info.name);
+    start.V1 = img_info.name;
+    start.T1 = 1;
+    start.L1 = sizeof(img_info.size);
+    start.V1 = img_info.size; //convertion to be checked
+
+    ControlPacket end;  //start and end are equal besides the C value?
+
+    start.C = 3;
+    start.T1 = 0;
+    start.L1 = sizeof(img_info.name);
+    start.V1 = img_info.name;
+    start.T1 = 1;
+    start.L1 = sizeof(img_info.size);
+    start.V1 = img_info.size; //convertion to be checked
+
+    struct TramaI {
+      unsigned char  F; 
+      unsigned char A;  
+      unsigned char C;  
+      unsigned char BCC1;
+      unsigned char data[];  
+      unsigned char BCC2; 
+      unsigned char F;
+    } TramaI;
+
+    index=0;
     //while - data transmission
-    // while(state == TRANSFERRING){
+     while(state == TRANSFERRING){
 
-    //   if (connect_attempt > MAX_ATTEMPS){
-    //     printf("Sender gave up, attempts exceded\n");
-    //     return 1;
-    //   }
+       if (connect_attempt > MAX_ATTEMPS){
+         printf("Sender gave up, attempts exceded\n");
+         return 1;
+       }
 
-    //   if(writeData(fd, SET, SU_TRAMA_SIZE) < 0)
-    //     perror("Error writing SET\n");
+       if(writeData(fd, start, sizeof(start));
+         perror("Error writing start packet\n");
 
-    
-    //   //Rececao do UA
-    //   idx = 0;
-    //   alarm(ALARM_SECONDS);
-    //   flag = 0;
+         while(SENDING_DATA){
+           DataPacket packet;
 
-    //   while (!STOP) {       /* loop for input */
+           packet.c = 1;
+           packet.N = index;
+           packet.data = getData(img_info.data, 90, index);   //TODO
+          //packet.L1
+           //packet.L2
+           
 
-    //     //printf("before read\n");
-    //     if ((res = read(fd,&rUA[idx],1)) < 0){
-    //       if (flag == 1){
-    //         printf("Timed Out\n");
-    //         break;
-    //       }
-    //       else{
-    //         perror("Read failed\n");
-    //       }
-    //     }
+           index++;
+         }
 
-    //     printf("0x%x : %d\n", rUA[idx], res);
 
-    //     //Check se os valores são iguais aos expected -> se sim continua normalmente se não vai mudar o idx para repetir leitura
+       if(writeData(fd, end, sizeof(end));
+         perror("Error writing end packet\n");
 
-    //     if(checkUAByteRecieved(rUA[idx], idx) == TRUE) //Depois a state machine vai ligar aqui
-    //       idx++;
-    //     else 
-    //       idx = 0; //volta ao início?
-        
-    //     if (idx == 5) STOP = TRUE;
-    //   }
+    }
 
-    //   alarm(0); //Reset alarm
+    printf("\n----------ALL DATA SENT----------\n\n");
 
-    // }
+    printf("\n----------DISCONNECTING----------\n\n");
 
     //!!!!!!!!!!!!!!!!!!!!NEWWWWWW!!!!!!!!!!!!!!!!!!!!!!!!
     //while - disconnect

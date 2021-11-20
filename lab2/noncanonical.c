@@ -6,7 +6,6 @@
 #include <termios.h>
 #include <stdio.h>
 
-#include "macrosLD.h"
 #include "utils.c"
 #include "api.c"
 
@@ -86,6 +85,7 @@ int checkUA_E_ByteRecieved(unsigned char byte_recieved, int idx){
 int main(int argc, char **argv)
 {
   
+  printf("\n----------RECEIVER----------\n\n");
   //llopen beginnig (open_reader)
   int fd, c, res;
 
@@ -93,6 +93,13 @@ int main(int argc, char **argv)
   
   if (argc > 2){
       perror("Too many arguments\n");
+      return 1;
+  }
+
+    
+  if (argc < 2){
+      perror("Too few arguments\n");
+      printf("Usage:\tnserial SerialPort\n\tex: nserial /dev/ttyS1\n");
       return 1;
   }
     
@@ -105,6 +112,8 @@ int main(int argc, char **argv)
   state = CONNECTING;
 
   int SET_received = 0;
+
+   printf("\n---------CONNECTING---------\n");
 
   //while - open connection
   while (state == CONNECTING)
@@ -138,9 +147,6 @@ int main(int argc, char **argv)
       }
     }
 
-
-
-
     if (STOP == TRUE) //se recebeu o SET corretamente, envia o UA para o Transmitter
     {
       //só faz print se valor correto
@@ -161,10 +167,11 @@ int main(int argc, char **argv)
 
   }
 
-  //receiving data
+  printf("\n----------CONNECTED-----------\n");
 
+  printf("\n--------RECEIVING DATA--------\n");
 
-  // while(state==TRANSFERRING){
+   while(state==TRANSFERRING){
 
   //   res = read(fd, &buf_R[idx], 1);
 
@@ -179,7 +186,9 @@ int main(int argc, char **argv)
   //   //responder transmitor
 
 
+  printf("\n-------ALL DATA RECEIVED-------\n");
 
+  printf("\n---------DISCONNECTING---------\n");
     
   // }
 
