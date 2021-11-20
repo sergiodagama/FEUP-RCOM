@@ -7,18 +7,43 @@
 #include <stdio.h>
 
 #include "macrosLD.h"
+#include "utils.c"
+#include "api.c"
 
 #define BAUDRATE B38400
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
 #define FALSE 0
 #define TRUE 1
 
-volatile int STOP=FALSE;
+volatile int STOP = FALSE;
 
-unsigned char UA[TRAMA_SIZE] = {FLAG, A_ER, C_UA, BCC(A_ER, C_UA), FLAG}; 
+unsigned char buf_R[MAX_SIZE];
 
+int checkSETByteRecieved(unsigned char byte_recieved, int idx)
+{
+  int is_OK = FALSE;
 
-int checkSETByteRecieved(unsigned char byte_recieved, int idx){
+  if ((idx == 0 || idx == 4) && byte_recieved == FLAG)
+  {
+    is_OK = TRUE;
+  }
+  else if (idx == 1 && byte_recieved == A_EE)
+  {
+    is_OK = TRUE;
+  }
+  else if (idx == 2 && byte_recieved == C_SET)
+  {
+    is_OK = TRUE;
+  }
+  else if (idx == 3 && byte_recieved == BCC(A_EE, C_SET))
+  {
+    is_OK = TRUE;
+  }
+
+  return is_OK;
+}
+
+int checkDiscEByteRecieved(unsigned char byte_recieved, int idx){
   int is_OK = FALSE;
 
   
@@ -28,114 +53,199 @@ int checkSETByteRecieved(unsigned char byte_recieved, int idx){
   else if (idx == 1 && byte_recieved == A_EE){
     is_OK = TRUE;
   }
-  else if (idx == 2 && byte_recieved == C_SET){
+  else if (idx == 2 && byte_recieved == C_DISC){
     is_OK = TRUE;
   }
-  else if (idx == 3 && byte_recieved == BCC(A_EE, C_SET)){
+  else if (idx == 3 && byte_recieved == BCC(A_EE, C_DISC)){
     is_OK = TRUE;
   }
 
   return is_OK;
 }
 
-int writeUA(int fd){
+int checkUA_E_ByteRecieved(unsigned char byte_recieved, int idx){
+  int is_OK = FALSE;
 
-    int res, i = 0;
-    while (i < TRAMA_SIZE){
-      printf("Written - 0x%x\n", UA[i]);
-      res = write(fd, &UA[i], 1);
-      i++;
-    }
+  
+  if((idx == 0 || idx == 4) && byte_recieved == FLAG){
+    is_OK = TRUE;
+  }
+  else if (idx == 1 && byte_recieved == A_EE){
+    is_OK = TRUE;
+  }
+  else if (idx == 2 && byte_recieved == C_UA){
+    is_OK = TRUE;
+  }
+  else if (idx == 3 && byte_recieved == BCC(A_EE, C_UA)){
+    is_OK = TRUE;
+  }
 
-    return res;
+  return is_OK;
 }
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
-    int fd,c, res;
-    struct termios oldtio,newtio;
-
-    if ( (argc < 2) || 
-  	     ((strcmp("/dev/ttyS0", argv[1])!=0) && 
-  	      (strcmp("/dev/ttyS1", argv[1])!=0) && 
-  	      (strcmp("/dev/ttyS11", argv[1])!=0) )) {
-      printf("Usage:\tnserial SerialPort\n\tex: nserial /dev/ttyS1\n");
-      exit(1);
-    }
-
-
-  /*
-    Open serial port device for reading and writing and not as controlling tty
-    because we don't want to get killed if linenoise sends CTRL-C.
-  */
   
+  //llopen beginnig (open_reader)
+  int fd, c, res;
+
+  enum state state;
+  
+  if (argc > 2){
+      perror("Too many arguments\n");
+      return 1;
+  }
     
-    fd = open(argv[1], O_RDWR | O_NOCTTY );
-    if (fd <0) {perror(argv[1]); exit(-1); }
+  if ((fd = llopen(argv[1], RECEIVER)) < 0){
+    perror("llopen error\n");
+    return 1;
+  }
 
-    if ( tcgetattr(fd,&oldtio) == -1) { /* save current port settings */
-      perror("tcgetattr");
-      exit(-1);
-    }
+  int idx = 0;
+  state = CONNECTING;
 
-    bzero(&newtio, sizeof(newtio));
-    newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
-    newtio.c_iflag = IGNPAR;
-    newtio.c_oflag = 0;
+  int SET_received = 0;
 
-    /* set input mode (non-canonical, no echo,...) */
-    newtio.c_lflag = 0;
+  //while - open connection
+  while (state == CONNECTING)
+  {
 
-    newtio.c_cc[VTIME]    = 0;   /* inter-character timer unused */
-    newtio.c_cc[VMIN]     = 1;   /* blocking read until 5 chars received */
+    //Receção do SET
+    printf(" - Receiving SET...\n");
+    while (!STOP)
+    { /* loop for input */
 
-
-
-  /* 
-    VTIME e VMIN devem ser alterados de forma a proteger com um temporizador a 
-    leitura do(s) pr�ximo(s) caracter(es)
-  */
-
-
-
-    tcflush(fd, TCIOFLUSH);
-
-    if ( tcsetattr(fd,TCSANOW,&newtio) == -1) {
-      perror("tcsetattr");
-      exit(-1);
-    }
-
-  //Rececao do SET
-    unsigned char rSET[TRAMA_SIZE];
-    int idx = 0;
-
-    while (!STOP) {       /* loop for input */
-      res = read(fd,&rSET[idx],1);  
-
-      printf("0x%x : %d\n", rSET[idx], res);
+      if((idx == 0) && (SET_received == 1)){
+        clean_buf(buf_R,MAX_SIZE);
+      }
+      res = read(fd, &buf_R[idx], 1);
 
       //Check se os valores são iguais aos expected -> se sim continua normalmente se não vai mudar o idx para repetir leitura
-
-      if(checkSETByteRecieved(rSET[idx], idx) == TRUE) //Depois a state machine vai ligar aqui para garantir que envia outra vez se der erro
+      if( (idx == 0) && (SET_received == 1) && (buf_R[idx] == 0x02)){ //verifica se já está a receber o control packet START
         idx++;
-      else 
-        idx = 0; //volta ao início?
-      
-      if (idx == 5) STOP = TRUE;
+        state==TRANSFERRING;
+        //receive_control_packet(buf_R, fd, ...);
+        break;
+      }
+
+      if (checkSETByteRecieved(buf_R[idx], idx) == TRUE) //verifica se está a receber os bytes do SET corretos
+        idx++;
+      else idx = 0; //volta ao início?
+
+      if (idx == 5){ 
+        STOP = TRUE;
+        state=TRANSFERRING; //com isto domentado o programa corre, porém na versão final tem q esta descomentado
+      }
     }
 
-    printf("All OK on receiver!\n");
 
-    sleep(2);
-    printf("\n");
 
-  //Envio de UA
-    if(writeUA(fd) < 0)
-      perror("Error writing UA\n");
 
-//     sleep(1);
+    if (STOP == TRUE) //se recebeu o SET corretamente, envia o UA para o Transmitter
+    {
+      //só faz print se valor correto
+      printTramaRead(buf_R, SU_TRAMA_SIZE);
 
-    tcsetattr(fd,TCSANOW,&oldtio);
-    close(fd);
-    return 0;
+      sleep(2);
+      printf("\n");
+
+      //Envio de UA
+      printf(" - Sending UA\n");
+      if (writeData(fd, UA_R, SU_TRAMA_SIZE) < 0)
+        perror("    Error writing UA\n");
+
+      printf("\nAll OK on receiver!\n");
+    }
+
+    STOP = FALSE;
+
+  }
+
+  //receiving data
+
+
+  // while(state==TRANSFERRING){
+
+  //   res = read(fd, &buf_R[idx], 1);
+
+  //   if((idx == 0) && (buf_R[idx] == 0x03)){ //verificar se está a receber um packet de controlo END
+  //     state==DISCONNECTING;
+  //     //receive_control_packet(buf_R, fd);
+  //     break;
+  //   }
+
+  //   //guardar a trama de informação em algum lado
+
+  //   //responder transmitor
+
+
+
+    
+  // }
+
+  STOP = FALSE;
+
+  int DISC_received = 0;
+  idx = 0;
+
+  state=DISCONNECTING; //temporário!! serve para o codigo entrar no while
+
+  //while disconneting
+  while (state==DISCONNECTING)
+  {
+    
+
+    //Check se os valores são iguais aos expected -> se sim continua normalmente se não vai mudar o idx para repetir leitura
+    while(!STOP){
+
+      res = read(fd, &buf_R[idx], 1);
+
+      if ((DISC_received == 1) && (idx == 2) && (buf_R[idx] == C_UA)){
+        state=FINISHED;
+      }
+
+      if (checkDiscEByteRecieved(buf_R[idx], idx) || (checkUA_E_ByteRecieved(buf_R[idx], idx) && (state==FINISHED)))
+        idx++;
+      
+      else{
+        idx = 0; //volta ao início?
+      }
+
+      if (idx == SU_TRAMA_SIZE){
+        STOP = TRUE;
+        DISC_received = 1;
+        //state==FINISHED;
+      }
+
+    }
+
+    if(STOP && state!=FINISHED){
+      printf(" - Received DISC...\n");
+      printTramaRead(buf_R, SU_TRAMA_SIZE);
+
+      //Send receiver disconnect
+      //Envio de DISC_R
+      printf(" - Sending DISC_R\n");
+      if (writeData(fd, DISC_R, SU_TRAMA_SIZE) < 0)
+        perror("    Error writing DISC_R\n");
+
+      printf("\n");
+    }
+
+    STOP = FALSE;
+    idx = 0;
+
+    //se receber disconnect sai do loop
+  }
+
+  //só faz print se valor correto
+  printTramaRead(buf_R, SU_TRAMA_SIZE);
+
+  //     sleep(1);
+  
+  printf("    Receiver Disconnecting, Adios!...\n");
+
+  llclose(fd, RECEIVER);
+
+  return 0;
 }
