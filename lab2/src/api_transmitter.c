@@ -99,7 +99,6 @@ int llopen_transmitter(char* port, int *fid){
 
   //port file open starting connection procedure
 
-  
   signal(SIGALRM, atende);  // instala a rotina que atende interrupcao
   siginterrupt(SIGALRM, 1); // quando o sinal SIGALRM é apanhado, provoca uma interrupção no read()
   
@@ -169,7 +168,7 @@ int llopen_transmitter(char* port, int *fid){
   return ALL_OK;
 }
 
-int disconnect_transmitter(int fd){
+int llclose_transmitter(int fd){
 
 
     STOP = FALSE;
@@ -195,11 +194,8 @@ int disconnect_transmitter(int fd){
         perror("    Error writing DISC\n");
       }
 
-        
-
       //receive DISC
       printf(" - Receiving DISC_R...\n");
-
         
       idx = 0;
       alarm(ALARM_SECONDS);
@@ -240,17 +236,11 @@ int disconnect_transmitter(int fd){
 
     printf("    UA sent, Disconnecting... bye bye\n");
 
-    return 0;
-}
+    if(tcsetattr(fd, TCSANOW, &oldtio) == -1){
+      perror("tcsetattr");
+      return -1;
+    }
 
-int llclose_transmitter(int fd){
-  if(tcsetattr(fd, TCSANOW, &oldtio) == -1){
-    perror("tcsetattr");
-    return -1;
-  }
-
-
-
-  close(fd);
-  return ALL_OK;
+    close(fd);
+    return ALL_OK;
 }

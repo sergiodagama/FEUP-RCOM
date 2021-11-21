@@ -35,8 +35,6 @@ struct termios oldtio,newtio;
  */
 int llopen_transmitter(char* port, int* fid);
 
-int disconnect_transmitter(int fd);
-
 /**
  * @brief Closes connection on the transmitter side
  * 

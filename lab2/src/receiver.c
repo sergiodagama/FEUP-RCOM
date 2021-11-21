@@ -13,11 +13,13 @@ int main(int argc, char** argv){
     //checking for user input error
     if(argc < 2){
         perror("Input error: too few arguments\n");
-        printf("Usage:\t[port_file_name]\tex: /dev/ttyS1\n");
+        printf("Usage:\t[port_file_name]\tex: /dev/ttyS11\n");
         return ERROR;
     }
 
-    printf("\n---------CONNECTING---------\n");
+    printf("\n########### RECEIVER ##########\n");
+
+     printf("\n-----------CONNECTING----------\n\n");
 
     int fd = ERROR; //port file descriptor
     
@@ -49,10 +51,17 @@ int main(int argc, char** argv){
     ////receive start packet
 
     ////loop to receive data
+    /*
+    while(NOT_END){
+        llread(int fd, char* buffer);
+    }*/
+    unsigned char *data = malloc(100);
+
+    llread(fd, data, 1);
 
     ////receive end packet 
 
-    printf("\n----------ALL DATA SENT----------\n\n");
+    printf("\n--------ALL DATA RECEIVED--------\n\n");
     
     printf("\n----------DISCONNECTING----------\n\n");
 

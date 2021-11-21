@@ -173,7 +173,7 @@ int llopen_receiver(char * port, int* fid){
   return ALL_OK;
 }
 
-int disconnect_receiver(int fd){
+int llclose_receiver(int fd){
   STOP = FALSE;
 
   int DISC_received = 0;
@@ -236,10 +236,6 @@ int disconnect_receiver(int fd){
   
   printf("    Receiver Disconnecting, Adios!...\n");
 
-  return 0;
-}
-
-int llclose_receiver(int fd){
   if(tcsetattr(fd, TCSANOW, &oldtio) == -1) {
     perror("tcsetattr");
     return ERROR;
