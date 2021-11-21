@@ -68,7 +68,7 @@ int main(int argc, char** argv){
 
     printf("\n----------SENDING DATA---------\n\n");
     
-    sleep(2);
+    sleep(1);
 
     //sending data TODO
     sendPacket(fd, DATA, 0);

@@ -109,11 +109,12 @@ int llwrite(int fd, char* buffer, int length, int Ns){
 
         printf("Attempt %d\n - Sending DATA frame\n", connect_attempt);
         
-        if(res = writeData(fd, frame, 100) < 0){  //change to I_FRAME_SIZE and suffed_frame when implemented bytestuffing
+        if((res = write(fd, frame, 100)) < 0){  //change to I_FRAME_SIZE and suffed_frame when implemented bytestuffing
             perror("    Error writing DATA\n");
         }
 
         printf("\n");
+        
 
         //wait for response RR /REJ
         idx = 0;
@@ -130,38 +131,54 @@ int llwrite(int fd, char* buffer, int length, int Ns){
         }*/
         break;
     }
+    printf("RES: %d\n", res);
     return res;
 }
 
 int llread(int fd, char* buffer, int Nr){
 
-    int STOP = FALSE;
     int res = 0;
     int index = 0;
 
-    unsigned char frame[I_FRAME_SIZE];
+    unsigned char frame[100];
 
-    read(fd, frame, 100);
+    unsigned char c;
 
-/*
-    while (!STOP) { 
-        printf("reading...\n");
-        read(fd, &frame[index], 1);
+    int stage = 0;
 
-      if(frame[index] == FLAG && index != 0){  //Found final flag
-          STOP = TRUE;
+
+    while (stage < 2) { 
+        //printf("reading...\n");
+        res += read(fd, &c, 1);
+
+
+      if(c == FLAG && stage == 0){  //Found final flag
+        stage = 1;
       }
-      else{
+      else if(c==FLAG && stage == 1){
+          stage = 2;
+      }
+
+
+      if(stage > 0){
+          frame[index] = c;
           index++;
       }
+
 
       //if (checkDataFrame()){ 
        // STOP = TRUE;
       //}
       //if it is valid take data out of frame and fill buffer
+      
     }
-    */
+
+    printf("\nBYTES READ: %d\n\n", res);
     printTramaRead(frame, index);
+    
+     
+    
+    
     
 /*
     if (STOP == TRUE) //se recebeu o SET corretamente, envia o UA para o Transmitter
