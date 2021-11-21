@@ -6,9 +6,11 @@
 #include <termios.h>
 #include <stdio.h>
 
-#include "macrosLD.h"
+
 #include "alarme.c"
 #include "utils.c"
+#include "api.c"
+#include "file.c"
 
 #define BAUDRATE B38400
 #define MODEMDEVICE "/dev/ttyS1"
@@ -64,62 +66,51 @@ int checkDiscRByteRecieved(unsigned char byte_recieved, int idx){
 
 int main(int argc, char** argv)
 {
-    int fd,c, res;
-    struct termios oldtio,newtio;
-    int sum = 0, speed = 0;
-    
-    if ( (argc < 2) || 
-  	     ((strcmp("/dev/ttyS0", argv[1])!=0) && 
-  	      (strcmp("/dev/ttyS1", argv[1])!=0) && 
-  	      (strcmp("/dev/ttyS10", argv[1])!=0) )) {
+    int fd, c, res;
+    FILE *img_fp;
+    img_info file;
+
+
+    enum state state;
+
+    printf("\n----------TRANSMITTER----------\n\n");
+
+    if (argc > 2){
+      perror("Too many arguments\n");
+      return 1;
+    }
+
+    if (argc < 2){
+      perror("Too few arguments\n");
       printf("Usage:\tnserial SerialPort\n\tex: nserial /dev/ttyS1\n");
-      exit(1);
+      return 1;
+    }
+    
+    if ((fd = llopen(argv[1], TRANSMITTER)) < 0){
+      perror("llopen error\n");
+      return 1;
     }
 
 
-  /*
-    Open serial port device for reading and writing and not as controlling tty
-    because we don't want to get killed if linenoise sends CTRL-C.
-  */
-
-
-    fd = open(argv[1], O_RDWR | O_NOCTTY );
-    if (fd <0) {perror(argv[1]); exit(-1); }
-
-    if ( tcgetattr(fd,&oldtio) == -1) { /* save current port settings */
-      perror("tcgetattr");
-      exit(-1);
+    if( (img_fp = fopen("pinguim.gif", "rb")) <0){
+      printf("Error opening img\n");
+      return 1;
+    }
+    file.name = "pinguim.gif";
+    
+    if(get_file_size(&file, img_fp)<0){ //preenche o file->size
+      return 1;
     }
 
-    bzero(&newtio, sizeof(newtio));
-    newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
-    newtio.c_iflag = IGNPAR;
-    newtio.c_oflag = 0;
-
-    /* set input mode (non-canonical, no echo,...) */
-    newtio.c_lflag = 0;
-
-    newtio.c_cc[VTIME]    = 0;   /* inter-character timer unused */
-    newtio.c_cc[VMIN]     = 1;   /* blocking read until 1 chars received */
-
-
-
-  /* 
-    VTIME e VMIN devem ser alterados de forma a proteger com um temporizador a 
-    leitura do(s) pr�ximo(s) caracter(es)
-  */
-
-
-
-    tcflush(fd, TCIOFLUSH);
-
-    if ( tcsetattr(fd,TCSANOW,&newtio) == -1) {
-      perror("tcsetattr");
-      exit(-1);
+    if(read_file(&file, img_fp)<0){//preenche o file->data
+      return 1;
     }
 
-    printf("New termios structure set\n");
 
+
+    //criar control packet de START
+
+    //criar control packet de END
 
     signal(SIGALRM, atende);  // instala a rotina que atende interrupcao
     siginterrupt(SIGALRM, 1); // quando o sinal SIGALRM é apanhado, provoca uma interrupção no read()
@@ -128,17 +119,23 @@ int main(int argc, char** argv)
 
     connect_attempt = 1;
 
+    state = CONNECTING;
+
+    printf("\n----------CONNECTING----------\n\n");
+
     //while - open connection
-    while(!STOP){
+    while(state == CONNECTING){
 
       if (connect_attempt > MAX_ATTEMPS){
         printf("Sender gave up, attempts exceded\n");
+        llclose(fd, TRANSMITTER);
         return 1;
       }
 
       printf("Attempt %d\n - Sending SET\n", connect_attempt);
-      if(writeData(fd, SET, SU_TRAMA_SIZE) < 0)
+      if(writeData(fd, SET, SU_TRAMA_SIZE) < 0){
         perror("    Error writing SET\n");
+      }
 
       printf("\n");
     
@@ -165,10 +162,12 @@ int main(int argc, char** argv)
 
         if(checkUAByteRecieved(buf_E[idx], idx) == TRUE) //Depois a state machine vai ligar aqui
           idx++;
-        else 
-          idx = 0; //volta ao início?
+        else  idx = 0; //volta ao início?
         
-        if (idx == 5) STOP = TRUE;
+        if (idx == 5){
+          STOP = TRUE;
+          state = TRANSFERRING;
+        }
       }
 
       alarm(0); //Reset alarm
@@ -181,73 +180,114 @@ int main(int argc, char** argv)
 
     printf("\nAll OK on sender!\n");
 
-   
     sleep(1);
        
-
     clean_buf(buf_E, MAX_SIZE);
 
     connect_attempt = 1;
-    STOP = FALSE;
 
+    printf("\n----------CONNECTED----------\n\n");
+
+    printf("\n---------SENDING DATA---------\n\n");
+
+    struct DataPacket {
+      unsigned char  C; //control value -> 1 for data
+      unsigned char  N;  //sequence number (module 255)
+      unsigned char L1;  // number of (k) data bytes (k = 256 * L2 + L1)
+      unsigned char L2;
+      unsigned char *data;  //data bytes
+    } DataPacket; 
+
+    struct ControlPacket {
+      unsigned char  C; //control value -> 2 for start, 3 for end
+      unsigned char T1;  //type of 0 -> file size, 1 -> file name
+      unsigned char L1;  //number of bytes of V field
+      unsigned char V1[];
+      unsigned char T2;  //type of 0 -> file size, 1 -> file name
+      unsigned char L2;  //number of bytes of V field
+      unsigned char V2[];
+    } ControlPacket;
+
+    ControlPacket start;
+
+    start.C = 2;
+    start.T1 = 0;
+    start.L1 = sizeof(img_info.name);
+    start.V1 = img_info.name;
+    start.T1 = 1;
+    start.L1 = sizeof(img_info.size);
+    start.V1 = img_info.size; //convertion to be checked
+
+    ControlPacket end;  //start and end are equal besides the C value?
+
+    start.C = 3;
+    start.T1 = 0;
+    start.L1 = sizeof(img_info.name);
+    start.V1 = img_info.name;
+    start.T1 = 1;
+    start.L1 = sizeof(img_info.size);
+    start.V1 = img_info.size; //convertion to be checked
+
+    struct TramaI {
+      unsigned char  F; 
+      unsigned char A;  
+      unsigned char C;  
+      unsigned char BCC1;
+      unsigned char data[];  
+      unsigned char BCC2; 
+      unsigned char F;
+    } TramaI;
+
+    index=0;
     //while - data transmission
-    // while(!STOP){
+     while(state == TRANSFERRING){
 
-    //   if (connect_attempt > MAX_ATTEMPS){
-    //     printf("Sender gave up, attempts exceded\n");
-    //     return 1;
-    //   }
+       if (connect_attempt > MAX_ATTEMPS){
+         printf("Sender gave up, attempts exceded\n");
+         return 1;
+       }
 
-    //   if(writeData(fd, SET, SU_TRAMA_SIZE) < 0)
-    //     perror("Error writing SET\n");
+       if(writeData(fd, start, sizeof(start));
+         perror("Error writing start packet\n");
 
-    
-    //   //Rececao do UA
-    //   idx = 0;
-    //   alarm(ALARM_SECONDS);
-    //   flag = 0;
+         while(SENDING_DATA){
+           DataPacket packet;
 
-    //   while (!STOP) {       /* loop for input */
+           packet.c = 1;
+           packet.N = index;
+           packet.data = getData(img_info.data, 90, index);   //TODO
+          //packet.L1
+           //packet.L2
+           
 
-    //     //printf("before read\n");
-    //     if ((res = read(fd,&rUA[idx],1)) < 0){
-    //       if (flag == 1){
-    //         printf("Timed Out\n");
-    //         break;
-    //       }
-    //       else{
-    //         perror("Read failed\n");
-    //       }
-    //     }
+           index++;
+         }
 
-    //     printf("0x%x : %d\n", rUA[idx], res);
 
-    //     //Check se os valores são iguais aos expected -> se sim continua normalmente se não vai mudar o idx para repetir leitura
+       if(writeData(fd, end, sizeof(end));
+         perror("Error writing end packet\n");
 
-    //     if(checkUAByteRecieved(rUA[idx], idx) == TRUE) //Depois a state machine vai ligar aqui
-    //       idx++;
-    //     else 
-    //       idx = 0; //volta ao início?
-        
-    //     if (idx == 5) STOP = TRUE;
-    //   }
+    }
 
-    //   alarm(0); //Reset alarm
+    printf("\n----------ALL DATA SENT----------\n\n");
 
-    // }
+    printf("\n----------DISCONNECTING----------\n\n");
 
     //!!!!!!!!!!!!!!!!!!!!NEWWWWWW!!!!!!!!!!!!!!!!!!!!!!!!
     //while - disconnect
-    int DISCONNECT = FALSE, RECEIVED = FALSE, SENT = FALSE;
     STOP = FALSE;
 
     connect_attempt = 1;
 
     //starting to disconnect
-    while(!DISCONNECT){
+
+    state=DISCONNECTING; //temporário!! serve para o codigo entrar no while
+
+    while(state==DISCONNECTING){
 
       if(connect_attempt > 4){
         printf("    Attempt %d", connect_attempt);
+        llclose(fd, TRANSMITTER);
         return 1;
       }
       //send DISC
@@ -266,7 +306,7 @@ int main(int argc, char** argv)
       idx = 0;
       alarm(ALARM_SECONDS);
       flag = 0;
-      while(!DISCONNECT){
+      while(!STOP){
         if((res = read(fd,&buf_E[idx],1))<0){
           if (flag == 1){
             printf("    Timed Out\n\n");
@@ -283,14 +323,16 @@ int main(int argc, char** argv)
         else 
           idx = 0; //volta ao início?
 
-        if (idx == 5) DISCONNECT = TRUE;
+        if (idx == 5){
+          STOP = TRUE;
+          state = TRANSFERRING;
+        }
       }
       alarm(0);//TODO timeout
 
     }
   
-    if (DISCONNECT == TRUE)
-         printTramaRead(buf_E, SU_TRAMA_SIZE);//só faz print se valor correto
+    printTramaRead(buf_E, SU_TRAMA_SIZE);//só faz print se valor correto
 
       //send UA
     printf(" - Sending UA_E...\n");
@@ -301,14 +343,7 @@ int main(int argc, char** argv)
     printf("    UA sent, Disconnecting... bye bye\n");
     //!!!!!!!!!!!!!!!!!!!!NEWWWWWW!!!!!!!!!!!!!!!!!!!!!!!!
 
-    if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) {
-      perror("tcsetattr");
-      exit(-1);
-    }
-
-
-
-
-    close(fd);
+    llclose(fd, TRANSMITTER);
+    free(file.data);
     return 0;
 }

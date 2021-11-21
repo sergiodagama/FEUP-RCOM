@@ -1,4 +1,6 @@
 //Funções gerais de escrita (e leitura) para a porta série.
+#include "../includes/buffer_utils.h"
+//#include "../includes/macrosLD.h"
 
 int writeData(int fd, unsigned char *trama, int size){
   int res, i = 0;
