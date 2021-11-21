@@ -1,4 +1,4 @@
-#include "file.h"
+#include "../includes/file.h"
 
 int get_file_size(img_info* img, FILE * file){
   fseek(file, 0, SEEK_END);

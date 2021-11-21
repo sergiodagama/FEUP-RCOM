@@ -1,3 +1,7 @@
+#ifndef MACROSLD_H
+#define MACROSLD_H
+
+
 /*Formato e tipos de Tramas
 
     - Tramas de Informação (I):
@@ -52,8 +56,23 @@
 
 #define BCC(A, C) A^C
 
-unsigned char SET[SU_TRAMA_SIZE] = {FLAG, A_EE, C_SET, BCC(A_EE, C_SET), FLAG};
-unsigned char UA_E[SU_TRAMA_SIZE] = {FLAG, A_EE, C_UA, BCC(A_EE, C_DISC), FLAG};
-unsigned char UA_R[SU_TRAMA_SIZE] = {FLAG, A_ER, C_UA, BCC(A_ER, C_UA), FLAG}; 
-unsigned char DISC_E[SU_TRAMA_SIZE] = {FLAG, A_EE, C_DISC, BCC(A_EE, C_DISC), FLAG};
-unsigned char DISC_R[SU_TRAMA_SIZE] = {FLAG, A_ER, C_DISC, BCC(A_ER, C_DISC), FLAG};
+static unsigned char SET[SU_TRAMA_SIZE] = {FLAG, A_EE, C_SET, BCC(A_EE, C_SET), FLAG};
+static unsigned char UA_E[SU_TRAMA_SIZE] = {FLAG, A_EE, C_UA, BCC(A_EE, C_DISC), FLAG};
+static unsigned char UA_R[SU_TRAMA_SIZE] = {FLAG, A_ER, C_UA, BCC(A_ER, C_UA), FLAG}; 
+static unsigned char DISC_E[SU_TRAMA_SIZE] = {FLAG, A_EE, C_DISC, BCC(A_EE, C_DISC), FLAG};
+static unsigned char DISC_R[SU_TRAMA_SIZE] = {FLAG, A_ER, C_DISC, BCC(A_ER, C_DISC), FLAG};
+
+#define BAUDRATE B38400
+#define FALSE 0
+#define TRUE 1
+
+#define ERROR -1
+#define ALL_OK 1
+
+/**
+ * @brief Connection state
+ * 
+ */
+enum state {CONNECTING, TRANSFERRING, DISCONNECTING, FINISHED};
+
+#endif

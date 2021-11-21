@@ -1,3 +1,7 @@
+#ifndef FILE_H
+#define FILE_H
+
+#include <stdio.h>
 
 typedef struct{
     char* name;
@@ -8,3 +12,5 @@ typedef struct{
 int get_file_size(img_info* img, FILE * file);
 
 int read_file(img_info* img, FILE *file);
+
+#endif
