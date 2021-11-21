@@ -18,7 +18,7 @@
 #include <termios.h>
 #include "api_receiver.h"
 #include "api_transmitter.h"
-//#include "byte_stuffing.h"
+#include "byte_stuffing.h"
 
 /**
  * @brief Application type

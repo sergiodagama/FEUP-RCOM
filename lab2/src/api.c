@@ -57,11 +57,11 @@ I frames structure:
     BCC1, BCC2 Protection fields (1 - header, 2 - data)
 */
 
-int I_FRAME_SIZE = 200;  //4 bytes for header and 90 max for data + 2 bytes for header [96 max total]-> after stuffing 200 (8 left)
+int I_FRAME_SIZE = 20;  //4 bytes for header and 90 max for data + 2 bytes for header [96 max total before stuffing] 20 to be changed to 200?
 
 int llwrite(int fd, char* buffer, int length, int Ns){
 
-    if(length > 90){
+    if(length > (I_FRAME_SIZE / 2) - 4){
         perror("Buffer data too big\n");
         return ERROR;
     }
@@ -69,28 +69,32 @@ int llwrite(int fd, char* buffer, int length, int Ns){
     int res = 0;
 
     //frame creation
-    unsigned char frame[100];
+    unsigned char frame[I_FRAME_SIZE];
 
     frame[0] = FLAG; //FLAG
     frame[1] = A_EE; //Address
+
     if(!Ns){
         frame[2] = C_NS0; //Control
     }else{
         frame[2] = C_NS1;
     }
-    frame[3] = 0; //BCC1  TODO
+    frame[3] = BCC(A_EE, C_NS0); //BCC1  TODO
+
+    unsigned short BCC2 = 0;
 
     for(int i = 0; i < length; i++){  //Data
         frame[4 + i] = buffer[i];
+        BCC2 = BCC(buffer[i], BCC2);
     }
 
-    frame[length + 4] = 0; //BCC2 TODO
+    frame[length + 4] = BCC2; //BCC2 TODO
     frame[length + 5] = FLAG; //FLAG
 
     //frame stuffing
-    unsigned char stuffed_frame[I_FRAME_SIZE];
+    unsigned char* stuffed_frame = malloc(I_FRAME_SIZE);
 
-    //stuffed_frame = byte_stuffing(length + 6, frame);
+    stuffed_frame = byteStuffing(length + 6, frame);
 
     //write frame
     signal(SIGALRM, atende);  // instala a rotina que atende interrupcao
@@ -109,9 +113,10 @@ int llwrite(int fd, char* buffer, int length, int Ns){
 
         printf("Attempt %d\n - Sending DATA frame\n", connect_attempt);
         
-        if((res = write(fd, frame, 100)) < 0){  //change to I_FRAME_SIZE and suffed_frame when implemented bytestuffing
+        if((res = write(fd, stuffed_frame, I_FRAME_SIZE)) < 0){  //change to I_FRAME_SIZE and suffed_frame when implemented bytestuffing
             perror("    Error writing DATA\n");
         }
+        printTramaRead(stuffed_frame, I_FRAME_SIZE);
 
         printf("\n");
         
@@ -135,51 +140,75 @@ int llwrite(int fd, char* buffer, int length, int Ns){
     return res;
 }
 
+int checkDataFrame(unsigned char* frame){
+    int is_OK = FALSE;
+
+    if (frame[0] == FLAG){
+        is_OK = TRUE;
+    }
+    else if (frame[1] == A_EE){
+        is_OK = TRUE;
+    }
+    else if (frame[2] == C_NS0){  //to be change!!
+        is_OK = TRUE;
+    }
+    else if (frame[3] == BCC(A_EE, C_NS0)){
+        is_OK = TRUE;
+    }
+    //MISSING REST OF CHECKING
+
+    return is_OK;
+}
+
 int llread(int fd, char* buffer, int Nr){
+    int res = 0, index = 0, stage = 0, STOP = FALSE;
 
-    int res = 0;
-    int index = 0;
-
-    unsigned char frame[100];
-
+    unsigned char frame[I_FRAME_SIZE];
     unsigned char c;
 
-    int stage = 0;
+    while(!STOP){
+        //reading frame
+        while (stage < 2) { 
+            res += read(fd, &c, 1);
 
+            if(c == FLAG && stage == 0){  //Found final flag
+                stage = 1;
+            }
+            else if(c==FLAG && stage == 1){
+                stage = 2;
+            }
 
-    while (stage < 2) { 
-        //printf("reading...\n");
-        res += read(fd, &c, 1);
+            if(stage > 0){
+                frame[index] = c;
+                index++;
+            }
+        }
+        printf("Before Reverse Stuffing: \n");
+        printTramaRead(frame, I_FRAME_SIZE);
 
+        //reverse the byte stuffing
+        unsigned char* original = malloc(I_FRAME_SIZE);
+        original = reverseByteStuffing(I_FRAME_SIZE, frame);
 
-      if(c == FLAG && stage == 0){  //Found final flag
-        stage = 1;
-      }
-      else if(c==FLAG && stage == 1){
-          stage = 2;
-      }
+        //checking read frame
+        if (checkDataFrame(frame)){  //TODO FUNCTION NOT FINISHED
+            STOP = TRUE;
+        }
+        else{
+            //clean frame and reset variables
+            clean_buf(frame, I_FRAME_SIZE);
+            clean_buf(original, I_FRAME_SIZE);
+            stage = 0;
+            res = 0;
+            index = 0;
+        }
 
+        printf("\nBYTES READ: %d\n", res);
 
-      if(stage > 0){
-          frame[index] = c;
-          index++;
-      }
-
-
-      //if (checkDataFrame()){ 
-       // STOP = TRUE;
-      //}
-      //if it is valid take data out of frame and fill buffer
-      
+        printf("After Reverse Stuffing: \n");
+        printTramaRead(original, I_FRAME_SIZE);
     }
-
-    printf("\nBYTES READ: %d\n\n", res);
-    printTramaRead(frame, index);
-    
      
-    
-    
-    
 /*
     if (STOP == TRUE) //se recebeu o SET corretamente, envia o UA para o Transmitter
     {

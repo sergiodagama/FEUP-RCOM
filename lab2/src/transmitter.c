@@ -3,14 +3,15 @@
 int sendPacket(int fd, enum packet_id id, int Ns){
   //llwrite(int fd, char* buffer, int length);
 
-  unsigned char testData[20];
+  unsigned char testData[4];
 
-  for(int i = 0; i < 20; i++){
+  for(short i = 0; i < 4; i++){
     testData[i] = 'a';
   }
+  testData[2] = FLAG;
 
   if(id == DATA){
-    int bytes_sent = llwrite(fd, testData, 20, Ns);
+    int bytes_sent = llwrite(fd, testData, 4, Ns);
 
     printf("BYTES SENT: %d\n", bytes_sent);
   }
