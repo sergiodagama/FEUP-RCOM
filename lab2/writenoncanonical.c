@@ -190,7 +190,7 @@ int main(int argc, char** argv)
 
     printf("\n---------SENDING DATA---------\n\n");
 
-    struct DataPacket {
+    typedef struct DataPacket {
       unsigned char  C; //control value -> 1 for data
       unsigned char  N;  //sequence number (module 255)
       unsigned char L1;  // number of (k) data bytes (k = 256 * L2 + L1)
@@ -198,7 +198,7 @@ int main(int argc, char** argv)
       unsigned char *data;  //data bytes
     } DataPacket; 
 
-    struct ControlPacket {
+    typedef struct ControlPacket {
       unsigned char  C; //control value -> 2 for start, 3 for end
       unsigned char T1;  //type of 0 -> file size, 1 -> file name
       unsigned char L1;  //number of bytes of V field
@@ -214,9 +214,9 @@ int main(int argc, char** argv)
     start.T1 = 0;
     start.L1 = sizeof(img_info.name);
     start.V1 = img_info.name;
-    start.T1 = 1;
-    start.L1 = sizeof(img_info.size);
-    start.V1 = img_info.size; //convertion to be checked
+    start.T2 = 1;
+    start.L2 = sizeof(img_info.size);
+    start.V2 = img_info.size; //convertion to be checked
 
     ControlPacket end;  //start and end are equal besides the C value?
 
@@ -224,11 +224,11 @@ int main(int argc, char** argv)
     start.T1 = 0;
     start.L1 = sizeof(img_info.name);
     start.V1 = img_info.name;
-    start.T1 = 1;
-    start.L1 = sizeof(img_info.size);
-    start.V1 = img_info.size; //convertion to be checked
+    start.T2 = 1;
+    start.L2 = sizeof(img_info.size);
+    start.V2 = img_info.size; //convertion to be checked
 
-    struct TramaI {
+    typedef struct TramaI {
       unsigned char  F; 
       unsigned char A;  
       unsigned char C;  
@@ -256,7 +256,7 @@ int main(int argc, char** argv)
            packet.c = 1;
            packet.N = index;
            packet.data = getData(img_info.data, 90, index);   //TODO
-          //packet.L1
+           //packet.L1
            //packet.L2
            
 

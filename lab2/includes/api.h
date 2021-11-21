@@ -18,6 +18,7 @@
 #include <termios.h>
 #include "api_receiver.h"
 #include "api_transmitter.h"
+//#include "byte_stuffing.h"
 
 /**
  * @brief Application type
@@ -64,9 +65,10 @@ int llopen(char* port, enum status stat, int* fid);
  * 
  * @param fd file descriptor of connection port file
  * @param buffer characters array to be received
+ * @param Nr current Nr
  * @return number of characters read, negative value in case of error
  */
-int llread(int fd, char* buffer);
+int llread(int fd, char* buffer, int Nr);
 
 /**
  * @brief Writes a data frame and receives response RR or REJ
@@ -74,9 +76,10 @@ int llread(int fd, char* buffer);
  * @param fd file descriptor of connection port file
  * @param buffer characters array to be received
  * @param length characters array size
+ * @param Ns current Ns
  * @return written characters, negative value in case of error
  */
-int llwrite(int fd, char* buffer, int length);
+int llwrite(int fd, char* buffer, int length, int Ns);
 
 /**
  * @brief Closes a connection
