@@ -1,8 +1,6 @@
 #include "../includes/transmitter.h"
 
-int sendPacket(int fd, enum packet_id id, int Ns){
-  //llwrite(int fd, char* buffer, int length);
-
+int sendPacket(int fd, enum packet_id id){
   unsigned char testData[4];
 
   for(short i = 0; i < 4; i++){
@@ -11,7 +9,7 @@ int sendPacket(int fd, enum packet_id id, int Ns){
   testData[2] = FLAG;
 
   if(id == DATA){
-    int bytes_sent = llwrite(fd, testData, 4, Ns);
+    int bytes_sent = llwrite(fd, testData, 4);
 
     printf("BYTES SENT: %d\n", bytes_sent);
   }
@@ -72,7 +70,8 @@ int main(int argc, char** argv){
     sleep(1);
 
     //sending data TODO
-    sendPacket(fd, DATA, 0);
+    sendPacket(fd, DATA);
+    sendPacket(fd, DATA);
 
     ////send start packet
     /*sendPacket(START);

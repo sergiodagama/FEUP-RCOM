@@ -64,7 +64,12 @@ int checkRRByteRecieved(unsigned char byte_recieved, int idx, int Ns){
     return TRUE;
 }
 
-int llwrite(int fd, char* buffer, int length, int Ns){
+int Ns = 1;
+
+int llwrite(int fd, char* buffer, int length){
+
+     Ns = (Ns == 0) ? 1 : 0;
+
      unsigned char buf_RR[MAX_SIZE];
 
     if(length > (I_FRAME_SIZE / 2) - 4){
@@ -184,7 +189,12 @@ int checkDataFrame(unsigned char* frame, int Nr){
     return is_OK;
 }
 
-int llread(int fd, char* buffer, int Nr){
+int Nr = 0;
+
+int llread(int fd, char* buffer){
+
+    Nr = (Nr == 0) ? 1 : 0; // change to be depdent on Ns received! TODO
+
     int res = 0, index = 0, stage = 0, STOP = FALSE;
 
     unsigned char frame[I_FRAME_SIZE];
