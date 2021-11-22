@@ -60,9 +60,45 @@ I frames structure:
 int I_FRAME_SIZE = 20;  //4 bytes for header and 90 max for data + 2 bytes for header [96 max total before stuffing] 20 to be changed to 200?
 
 
-int checkRRByteRecieved(unsigned char byte_recieved, int idx, int Ns){
-    return TRUE;
+int checkRRByteRecieved(unsigned char* buf, int index, int Ns){
+    int is_OK = FALSE;
+
+    if ((index == 0 && buf[0] != FLAG) || (index == 4 && buf[4] != FLAG)){
+        return is_OK;        
+    }
+    if(index == 1 && buf[1] != A_EE){
+        return is_OK;
+    }
+    if(index == 2 && buf[2] != C_RR_NS1 && Ns == 0){
+        return is_OK;
+    }
+    if(index == 2 && buf[2] != C_RR_NS0 && Ns == 1){
+        return is_OK;
+    }
+    /*if(index == 3 && ((unsigned short) buf[3] !=  (unsigned short) BCC(buf[1], buf[2]))){
+        printf("BUF INDEX 3: %x\n", buf[3]);
+        printf("BCC INDEX 3: %x\n", BCC(buf[1], buf[2]));
+        return is_OK;
+    }*/
+
+    //printf("RR good :)\n");
+
+    is_OK = TRUE;
+    return is_OK;
+
 }
+
+
+int isRej(unsigned char c, int Ns){
+    if(Ns == 0){
+        return c == C_REJ_NS1;
+    }
+    if(Ns == 1){
+        return c == C_RR_NS0;
+    }
+}
+
+
 
 int Ns = 1;
 
@@ -70,7 +106,7 @@ int llwrite(int fd, char* buffer, int length){
 
      Ns = (Ns == 0) ? 1 : 0;
 
-     unsigned char buf_RR[MAX_SIZE];
+     unsigned char buf_RR[SU_TRAMA_SIZE];
 
     if(length > (I_FRAME_SIZE / 2) - 4){
         perror("Buffer data too big\n");
@@ -90,7 +126,7 @@ int llwrite(int fd, char* buffer, int length){
     }else{
         frame[2] = C_NS1;
     }
-    frame[3] = BCC(A_EE, C_NS0); //BCC1  TODO
+    frame[3] = BCC(A_EE, frame[2]); //BCC1  TODO
 
     unsigned short BCC2 = 0;
 
@@ -134,30 +170,45 @@ int llwrite(int fd, char* buffer, int length){
         idx = 0;
         alarm(ALARM_SECONDS);
         flag = 0;
+        int res_2 = 0;
 
         alarm(0); //Reset alarm
 
-        int rr_received = 0; 
         //wait for response RR /REJ
         printf(" - Receiving RR or RJ...\n");
 
-        while (!STOP) {
-
-            if((idx == 0) && (rr_received == 1)){
-                clean_buf(buf_RR, MAX_SIZE);
+        while (!STOP)
+        { /* loop for input */
+            if(idx == 0){
+                clean_buf(buf_RR, SU_TRAMA_SIZE);
             }
-            res = read(fd, &buf_RR[idx], 1);
+            res_2 += read(fd, &buf_RR[idx], 1);
+            //printTramaRead(buf_RR, SU_TRAMA_SIZE);
 
-            if (checkRRByteRecieved(buf_RR[idx], idx, Ns) == TRUE) //verifica se está a receber os bytes do RR corretos   TODO
+            if (checkRRByteRecieved(buf_RR, idx, Ns) == TRUE) //verifica se está a receber os bytes do SET corretos
                 idx++;
-            else idx = 0; //volta ao início?
+            else{
+                res_2=0;
+                idx = 0; //nao seria voltar a enviar data? inves de recber RR again
+                printf("RR not good :(\n");
+            }
 
             if (idx == 5){ 
                 STOP = TRUE;
-                SENDING = FALSE;
+
             }
         }
+
+        if(isRej(buf_RR[2], Ns)){  //if it is rej go back and send again 
+            connect_attempt = 1;
+            STOP = FALSE;
+        }
+        else{
+            SENDING = FALSE;
+        }
+
     }
+    
 
     if (STOP == TRUE) //se recebeu o SET corretamente, envia o UA para o Transmitter
     {
@@ -169,25 +220,83 @@ int llwrite(int fd, char* buffer, int length){
     return res;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 int checkDataFrame(unsigned char* frame, int Nr){
     int is_OK = FALSE;
 
-    if (frame[0] == FLAG){
-        is_OK = TRUE;
+    if (frame[0] != FLAG){
+        return is_OK;
     }
-    else if (frame[1] == A_EE){
-        is_OK = TRUE;
+    if (frame[1] != A_EE){
+        return is_OK;
     }
-    else if (frame[2] != Nr){ //to be change!!
-        is_OK = TRUE;
+    if (Nr){  //if Nr == 1 => frame[2] == 0
+        if(frame[2] != C_NS0){
+            return is_OK;
+        }
     }
-    else if (frame[3] == BCC(A_EE, (!Nr))){
-        is_OK = TRUE;
+    if (!Nr){
+        if(frame[2] != C_NS1){
+            return is_OK;
+        }
     }
-    //MISSING REST OF CHECKING
+    if (frame[3] != BCC(frame[1], frame[2])){  //BCC1 (header)
+        return is_OK;
+    }
+
+    //calculating BCC2
+    unsigned short BCC2 = 0;
+
+    int i = 0; //zero, so that i+1 is equal to data size
+    int last_flag = 0;
+
+    for(int j = 0; j < I_FRAME_SIZE; j++){
+        if(frame[j] == FLAG) last_flag = j;
+    }
+
+    printf("LAST FLAG: %d\n", last_flag);
+
+    while(i+4 < last_flag-1){  
+        printf("while-> frame %x\n", frame[4+i]);
+        BCC2 = BCC(frame[4+i], BCC2);
+        i++;
+    }
+    if(BCC2 != frame[last_flag-1]){
+        printf("HEREEEE\n");
+        return is_OK;
+    }
+    
+    if(FLAG != frame[last_flag]){
+        printf("HEREEEE 22222222222\n");
+        return is_OK;
+    }
+    
+    is_OK = TRUE;
 
     return is_OK;
 }
+
+
+
+
+
+
 
 int Nr = 0;
 
@@ -198,6 +307,7 @@ int llread(int fd, char* buffer){
     int res = 0, index = 0, stage = 0, STOP = FALSE;
 
     unsigned char frame[I_FRAME_SIZE];
+    unsigned char* original = malloc(I_FRAME_SIZE);
     unsigned char c;
 
     while(!STOP){
@@ -221,20 +331,27 @@ int llread(int fd, char* buffer){
         printTramaRead(frame, I_FRAME_SIZE);
 
         //reverse the byte stuffing
-        unsigned char* original = malloc(I_FRAME_SIZE);
         original = reverseByteStuffing(I_FRAME_SIZE, frame);
 
+        printf("After Reverse Stuffing: \n");
+        printTramaRead(original, I_FRAME_SIZE);
+
         //checking read frame
-        if (checkDataFrame(frame, Nr)){  //TODO FUNCTION NOT FINISHED
+        if (checkDataFrame(original, Nr)){  
             STOP = TRUE;
-
-            printf("\nBYTES READ: %d\n", res);
-
-            printf("After Reverse Stuffing: \n");
-            printTramaRead(original, I_FRAME_SIZE);
+            printf("\n DATA ALL OK - bytes read: %d\n", res);
         }
         else{
-            //send REJ here ?
+            //sending REJ
+            printf(" Data frame wrong - Sending REJ\n");  //if rej go back
+            if(Nr == 1){
+                if (writeData(fd, RJ1, SU_TRAMA_SIZE) < 0)
+                    perror("    Error writing RJ1\n");
+            }
+            else if(Nr == 0){
+                if (writeData(fd, RJ0, SU_TRAMA_SIZE) < 0)
+                    perror("    Error writing RJ0\n");
+            }
 
             //clean frame and reset variables
             clean_buf(frame, I_FRAME_SIZE);
@@ -254,11 +371,11 @@ int llread(int fd, char* buffer){
       printf(" - Sending RR\n");
       if(Nr == 1){
         if (writeData(fd, RR1, SU_TRAMA_SIZE) < 0)
-            perror("    Error writing UA\n");
+            perror("    Error writing RR1\n");
       }
       else if(Nr == 0){
           if (writeData(fd, RR0, SU_TRAMA_SIZE) < 0)
-            perror("    Error writing UA\n");
+            perror("    Error writing RR0\n");
       }
         
 

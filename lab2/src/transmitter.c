@@ -71,7 +71,6 @@ int main(int argc, char** argv){
 
     //sending data TODO
     sendPacket(fd, DATA);
-    sendPacket(fd, DATA);
 
     ////send start packet
     /*sendPacket(START);
