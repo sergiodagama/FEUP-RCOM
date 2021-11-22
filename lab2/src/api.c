@@ -59,7 +59,13 @@ I frames structure:
 
 int I_FRAME_SIZE = 20;  //4 bytes for header and 90 max for data + 2 bytes for header [96 max total before stuffing] 20 to be changed to 200?
 
+
+int checkRRByteRecieved(unsigned char byte_recieved, int idx, int Ns){
+    return TRUE;
+}
+
 int llwrite(int fd, char* buffer, int length, int Ns){
+     unsigned char buf_RR[MAX_SIZE];
 
     if(length > (I_FRAME_SIZE / 2) - 4){
         perror("Buffer data too big\n");
@@ -113,34 +119,52 @@ int llwrite(int fd, char* buffer, int length, int Ns){
 
         printf("Attempt %d\n - Sending DATA frame\n", connect_attempt);
         
-        if((res = write(fd, stuffed_frame, I_FRAME_SIZE)) < 0){  //change to I_FRAME_SIZE and suffed_frame when implemented bytestuffing
+        if((res = write(fd, stuffed_frame, I_FRAME_SIZE)) < 0){ 
             perror("    Error writing DATA\n");
         }
         printTramaRead(stuffed_frame, I_FRAME_SIZE);
 
         printf("\n");
         
-
-        //wait for response RR /REJ
         idx = 0;
         alarm(ALARM_SECONDS);
         flag = 0;
 
         alarm(0); //Reset alarm
 
+        int rr_received = 0; 
+        //wait for response RR /REJ
         printf(" - Receiving RR or RJ...\n");
-/*
+
         while (!STOP) {
-            
-            
-        }*/
-        break;
+
+            if((idx == 0) && (rr_received == 1)){
+                clean_buf(buf_RR, MAX_SIZE);
+            }
+            res = read(fd, &buf_RR[idx], 1);
+
+            if (checkRRByteRecieved(buf_RR[idx], idx, Ns) == TRUE) //verifica se está a receber os bytes do RR corretos   TODO
+                idx++;
+            else idx = 0; //volta ao início?
+
+            if (idx == 5){ 
+                STOP = TRUE;
+                SENDING = FALSE;
+            }
+        }
     }
+
+    if (STOP == TRUE) //se recebeu o SET corretamente, envia o UA para o Transmitter
+    {
+        //só faz print se valor correto
+        printTramaRead(buf_RR, SU_TRAMA_SIZE);
+    }
+
     printf("RES: %d\n", res);
     return res;
 }
 
-int checkDataFrame(unsigned char* frame){
+int checkDataFrame(unsigned char* frame, int Nr){
     int is_OK = FALSE;
 
     if (frame[0] == FLAG){
@@ -149,10 +173,10 @@ int checkDataFrame(unsigned char* frame){
     else if (frame[1] == A_EE){
         is_OK = TRUE;
     }
-    else if (frame[2] == C_NS0){  //to be change!!
+    else if (frame[2] != Nr){ //to be change!!
         is_OK = TRUE;
     }
-    else if (frame[3] == BCC(A_EE, C_NS0)){
+    else if (frame[3] == BCC(A_EE, (!Nr))){
         is_OK = TRUE;
     }
     //MISSING REST OF CHECKING
@@ -191,10 +215,17 @@ int llread(int fd, char* buffer, int Nr){
         original = reverseByteStuffing(I_FRAME_SIZE, frame);
 
         //checking read frame
-        if (checkDataFrame(frame)){  //TODO FUNCTION NOT FINISHED
+        if (checkDataFrame(frame, Nr)){  //TODO FUNCTION NOT FINISHED
             STOP = TRUE;
+
+            printf("\nBYTES READ: %d\n", res);
+
+            printf("After Reverse Stuffing: \n");
+            printTramaRead(original, I_FRAME_SIZE);
         }
         else{
+            //send REJ here ?
+
             //clean frame and reset variables
             clean_buf(frame, I_FRAME_SIZE);
             clean_buf(original, I_FRAME_SIZE);
@@ -202,28 +233,27 @@ int llread(int fd, char* buffer, int Nr){
             res = 0;
             index = 0;
         }
-
-        printf("\nBYTES READ: %d\n", res);
-
-        printf("After Reverse Stuffing: \n");
-        printTramaRead(original, I_FRAME_SIZE);
     }
      
-/*
-    if (STOP == TRUE) //se recebeu o SET corretamente, envia o UA para o Transmitter
-    {
-      //só faz print se valor correto
-      printTramaRead(buf_R, SU_TRAMA_SIZE);
+    if (STOP == TRUE) { //se recebeu o I Frame corretamente, envia o RR ou REJ para o Transmitter  (MISSING REJ)
 
       sleep(2);
       printf("\n");
 
-      //Envio de UA
-      printf(" - Sending UA\n");
-      if (writeData(fd, UA_R, SU_TRAMA_SIZE) < 0)
-        perror("    Error writing UA\n");
+      //Envio de RR
+      printf(" - Sending RR\n");
+      if(Nr == 1){
+        if (writeData(fd, RR1, SU_TRAMA_SIZE) < 0)
+            perror("    Error writing UA\n");
+      }
+      else if(Nr == 0){
+          if (writeData(fd, RR0, SU_TRAMA_SIZE) < 0)
+            perror("    Error writing UA\n");
+      }
+        
 
       printf("\nAll OK on receiver!\n");
-    }*/
+    }
+
     return 0;
 }

@@ -13,8 +13,6 @@ int writeData(int fd, unsigned char *trama, int size){
       }
       i++;
     }
-
-    printf("\ni: %d", i);
     return i;
 }
 

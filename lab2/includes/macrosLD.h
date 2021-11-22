@@ -62,6 +62,12 @@ static unsigned char UA_R[SU_TRAMA_SIZE] = {FLAG, A_ER, C_UA, BCC(A_ER, C_UA), F
 static unsigned char DISC_E[SU_TRAMA_SIZE] = {FLAG, A_EE, C_DISC, BCC(A_EE, C_DISC), FLAG};
 static unsigned char DISC_R[SU_TRAMA_SIZE] = {FLAG, A_ER, C_DISC, BCC(A_ER, C_DISC), FLAG};
 
+static unsigned char RR0[SU_TRAMA_SIZE] = {FLAG, A_EE, C_RR_NS0, BCC(A_EE, C_RR_NS0), FLAG};
+static unsigned char RR1[SU_TRAMA_SIZE] = {FLAG, A_EE, C_RR_NS1, BCC(A_EE, C_RR_NS1), FLAG};
+
+static unsigned char RJ0[SU_TRAMA_SIZE] = {FLAG, A_EE, C_REJ_NS0, BCC(A_EE, C_REJ_NS0), FLAG};
+static unsigned char RJ1[SU_TRAMA_SIZE] = {FLAG, A_EE, C_REJ_NS1, BCC(A_EE, C_REJ_NS1), FLAG};
+
 #define BAUDRATE B38400
 #define FALSE 0
 #define TRUE 1
