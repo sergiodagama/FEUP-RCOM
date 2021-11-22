@@ -22,13 +22,13 @@ int sendPacket(int fd, enum packet_id id, FileInfo* file_info){
 
     start.C = 2;
     start.T1 = 0;
-    start.L1 = 100;
+    start.L1 = 20;
     start.V1 = file_info->name;
     start.T2 = 1;
-    start.L2 = 100;
+    start.L2 = 20;
     start.V2 = file_info->size; 
 
-
+    int bytes_sent = llwrite(fd, start, sizeof(start));
   }
 
   //END PACKET
@@ -42,6 +42,8 @@ int sendPacket(int fd, enum packet_id id, FileInfo* file_info){
     end.T2 = 1;
     end.L2 = 100;
     end.V2 = file_info->size; 
+
+    int bytes_sent = llwrite(fd, end, sizeof(end));
   }
 
   //DATA PACKET
@@ -120,11 +122,11 @@ int main(int argc, char** argv){
     sleep(1);
 
     //sending data TODO
-    sendPacket(fd, DATA, file_info);
+    //sendPacket(fd, DATA, file_info);
 
     ////send start packet
-    /*sendPacket(START);
-
+    sendPacket(fd, START, file_info);
+/*
     ////loop to send data
     int THERE_IS_DATA = TRUE;
 
