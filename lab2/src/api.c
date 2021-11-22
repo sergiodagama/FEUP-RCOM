@@ -75,11 +75,14 @@ int checkRRByteRecieved(unsigned char* buf, int index, int Ns){
     if(index == 2 && buf[2] != C_RR_NS0 && Ns == 1){
         return is_OK;
     }
-    /*if(index == 3 && ((unsigned short) buf[3] !=  (unsigned short) BCC(buf[1], buf[2]))){
-        printf("BUF INDEX 3: %x\n", buf[3]);
-        printf("BCC INDEX 3: %x\n", BCC(buf[1], buf[2]));
+    if(index == 3 && (buf[3] != (A_EE^C_RR_NS1)) && Ns == 0){
+        printf("HERE AEE NS1\n");
         return is_OK;
-    }*/
+    }
+    if(index == 3 && (buf[3] != (A_EE^C_RR_NS0)) && Ns == 1){
+        printf("HERE AEE NS0\n");
+        return is_OK;
+    }
 
     //printf("RR good :)\n");
 
@@ -94,7 +97,7 @@ int isRej(unsigned char c, int Ns){
         return c == C_REJ_NS1;
     }
     if(Ns == 1){
-        return c == C_RR_NS0;
+        return c == C_REJ_NS0;
     }
 }
 
@@ -171,6 +174,7 @@ int llwrite(int fd, char* buffer, int length){
         alarm(ALARM_SECONDS);
         flag = 0;
         int res_2 = 0;
+        int good_rr = TRUE;
 
         alarm(0); //Reset alarm
 
@@ -188,6 +192,7 @@ int llwrite(int fd, char* buffer, int length){
             if (checkRRByteRecieved(buf_RR, idx, Ns) == TRUE) //verifica se está a receber os bytes do SET corretos
                 idx++;
             else{
+                good_rr = FALSE;
                 res_2=0;
                 idx = 0; //nao seria voltar a enviar data? inves de recber RR again
                 printf("RR not good :(\n");
@@ -199,16 +204,13 @@ int llwrite(int fd, char* buffer, int length){
             }
         }
 
-        if(isRej(buf_RR[2], Ns)){  //if it is rej go back and send again 
+        if(isRej(buf_RR[2], Ns) || !good_rr){  //if it is rej or not good rr go back and send again 
             connect_attempt = 1;
-            STOP = FALSE;
         }
         else{
             SENDING = FALSE;
         }
-
     }
-    
 
     if (STOP == TRUE) //se recebeu o SET corretamente, envia o UA para o Transmitter
     {
@@ -256,8 +258,15 @@ int checkDataFrame(unsigned char* frame, int Nr){
             return is_OK;
         }
     }
-    if (frame[3] != BCC(frame[1], frame[2])){  //BCC1 (header)
-        return is_OK;
+    if (Nr){  //if Nr == 1 => frame[2] == 0
+        if(frame[3] != BCC(A_EE, C_NS0)){
+            return is_OK;
+        }
+    }
+    if (!Nr){
+        if(frame[3] != BCC(A_EE, C_NS1)){
+            return is_OK;
+        }
     }
 
     //calculating BCC2
@@ -291,9 +300,6 @@ int checkDataFrame(unsigned char* frame, int Nr){
 
     return is_OK;
 }
-
-
-
 
 
 

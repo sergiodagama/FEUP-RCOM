@@ -19,6 +19,7 @@
 #include "api_receiver.h"
 #include "api_transmitter.h"
 #include "byte_stuffing.h"
+#include "file.h"
 
 /**
  * @brief Application type

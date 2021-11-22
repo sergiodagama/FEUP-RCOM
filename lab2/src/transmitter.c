@@ -1,6 +1,8 @@
 #include "../includes/transmitter.h"
 
-int sendPacket(int fd, enum packet_id id){
+int sendPacket(int fd, enum packet_id id, FileInfo* file_info){
+
+  //TESTING PURPOSES
   unsigned char testData[4];
 
   for(short i = 0; i < 4; i++){
@@ -13,6 +15,39 @@ int sendPacket(int fd, enum packet_id id){
 
     printf("BYTES SENT: %d\n", bytes_sent);
   }
+
+  //START PACKET
+  if(id == START){
+    ControlPacket start;
+
+    start.C = 2;
+    start.T1 = 0;
+    start.L1 = 100;
+    start.V1 = file_info->name;
+    start.T2 = 1;
+    start.L2 = 100;
+    start.V2 = file_info->size; 
+
+
+  }
+
+  //END PACKET
+  else if(id == END){
+    ControlPacket end;  //start and end are equal besides the C value?
+
+    end.C = 3;
+    end.T1 = 0;
+    end.L1 = 100;
+    end.V1 = file_info->name;
+    end.T2 = 1;
+    end.L2 = 100;
+    end.V2 = file_info->size; 
+  }
+
+  //DATA PACKET
+
+
+
 }
 
 /**
@@ -54,23 +89,38 @@ int main(int argc, char** argv){
         return ERROR;
     }
 
-    //checking errors in file descriptor
+    //checking errors in port file descriptor
     if(fd != ERROR)
         transmitter.fileDescriptor = fd;
     else{
         perror("Error: file descriptor not updated\n");
         return ERROR;
     }
-    
 
     printf("\n------------CONNECTED----------\n\n");
+
+    //openning file and filling file information
+    FILE *file_fd;
+    FileInfo *file_info = malloc(sizeof(FileInfo));
+
+    printf("ARGV2: %s\n", argv[2]);
+
+    if((file_fd = fopen("src/pinguim.gif", "rb")) == NULL){
+      perror("Error opening file to send\n");
+      return ERROR;
+    }
+    
+    if(fillInfo(file_info, file_fd, argv[2])<0){ 
+      perror("Error filling file information\n");
+      return ERROR;
+    }
 
     printf("\n----------SENDING DATA---------\n\n");
     
     sleep(1);
 
     //sending data TODO
-    sendPacket(fd, DATA);
+    sendPacket(fd, DATA, file_info);
 
     ////send start packet
     /*sendPacket(START);
