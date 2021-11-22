@@ -57,9 +57,6 @@ I frames structure:
     BCC1, BCC2 Protection fields (1 - header, 2 - data)
 */
 
-int I_FRAME_SIZE = 20;  //4 bytes for header and 90 max for data + 2 bytes for header [96 max total before stuffing] 20 to be changed to 200?
-
-
 int checkRRByteRecieved(unsigned char* buf, int index, int Ns){
     int is_OK = FALSE;
 

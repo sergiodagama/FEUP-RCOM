@@ -1,7 +1,79 @@
 #include "../includes/transmitter.h"
 
-int sendPacket(int fd, enum packet_id id, FileInfo* file_info){
+ControlPacket* createControlPacket(FileInfo* file_info){
+  
+  unsigned char * converted = malloc(50);
 
+  ControlPacket *controlpacket = malloc(sizeof(ControlPacket));
+
+
+  converted[0] =  CP_START;
+
+  converted[1] = 0;
+  int i = 0;
+
+  printf("\n");
+
+  while(*(file_info->name + i) != '\0'){
+    converted[i+3] = *(file_info->name + i);
+    printf(" (%c) - 0x%x - ", *(file_info->name + i), *(file_info->name + i));
+    i++;
+  }
+  converted[2] = i;
+
+  printf("\n");
+
+/*
+  unsigned char size_dataSize[sizeof(unsigned long)];
+
+  memcpy()
+
+  size_t size_of_size = sizeof(unsigned long);
+*/
+  converted[i+3]= 1;
+  //converted[i+2]= (unsigned short) size_of_size;
+  converted[i+3+1]= 4;
+  converted[i+3+2]= 0;
+  converted[i+3+3]= 0;
+  converted[i+3+4]= 0;
+  converted[i+3+5]= 1;
+  /*
+  for(int k = 0; k < size_of_size; k++){
+    converted[k+i+3] = *(file_info->size + k);
+  }
+*/
+
+  controlpacket->packet = converted;
+  controlpacket->size = i+3+6;
+
+  return controlpacket;
+}
+
+//sendPacket
+
+int sendDataPacket(int fd, FileInfo* file_info){   
+    int quant = 1024;
+    int index = 0;
+
+    int s =  file_info->size;
+    int bytes_sent; 
+    
+    while(s > 0){
+      s-=quant;
+      if(s < quant){
+        quant = s;
+      }
+
+      bytes_sent = llwrite(fd, dataChunk(file_info->data, index, quant), quant);
+
+      index += quant;
+    }
+
+    printf("BYTES SENT in send DATA: %d\n", bytes_sent);
+}
+
+int sendControlPacket(int fd, enum packet_id id, FileInfo* file_info){
+  /*
   //TESTING PURPOSES
   unsigned char testData[4];
 
@@ -9,47 +81,26 @@ int sendPacket(int fd, enum packet_id id, FileInfo* file_info){
     testData[i] = 'a';
   }
   testData[2] = FLAG;
+*/
+  ControlPacket* control_p = malloc(sizeof(ControlPacket));
 
-  if(id == DATA){
-    int bytes_sent = llwrite(fd, testData, 4);
+  control_p = createControlPacket(file_info);
 
-    printf("BYTES SENT: %d\n", bytes_sent);
-  }
+  int bytes_sent;
 
   //START PACKET
   if(id == START){
-    ControlPacket start;
-
-    start.C = 2;
-    start.T1 = 0;
-    start.L1 = 20;
-    start.V1 = file_info->name;
-    start.T2 = 1;
-    start.L2 = 20;
-    start.V2 = file_info->size; 
-
-    int bytes_sent = llwrite(fd, start, sizeof(start));
+    bytes_sent = llwrite(fd, control_p->packet, control_p->size);
   }
 
   //END PACKET
   else if(id == END){
-    ControlPacket end;  //start and end are equal besides the C value?
-
-    end.C = 3;
-    end.T1 = 0;
-    end.L1 = 100;
-    end.V1 = file_info->name;
-    end.T2 = 1;
-    end.L2 = 100;
-    end.V2 = file_info->size; 
-
-    int bytes_sent = llwrite(fd, end, sizeof(end));
+  
+    control_p->packet[0] =  CP_END;
+    bytes_sent = llwrite(fd, control_p->packet,  control_p->size);
   }
 
-  //DATA PACKET
-
-
-
+  printf("BYTES SENT in send DATA: %d\n", bytes_sent);
 }
 
 /**
@@ -121,22 +172,14 @@ int main(int argc, char** argv){
     
     sleep(1);
 
-    //sending data TODO
-    //sendPacket(fd, DATA, file_info);
+    //send start packet
+    sendControlPacket(fd, START, file_info);
 
-    ////send start packet
-    sendPacket(fd, START, file_info);
-/*
-    ////loop to send data
-    int THERE_IS_DATA = TRUE;
+    //loop to send data
+    s//endDataPacket(fd, file_info);
 
-    while(THERE_IS_DATA){
-      sendPacket(DATA)
-    }
-
-    sendPacket(END);*/
-
-    ////send end packet 
+    //send end packet 
+    //sendControlPacket(fd, END, file_info);
 
     printf("\n----------ALL DATA SENT----------\n\n");
     

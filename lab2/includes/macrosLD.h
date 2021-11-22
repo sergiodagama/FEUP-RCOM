@@ -32,6 +32,7 @@
 #define ALARM_SECONDS 3
 #define MAX_SIZE 200
 #define SU_TRAMA_SIZE 5
+#define I_FRAME_SIZE 200  //4 bytes for header and 90 max for data + 2 bytes for header [96 max total before stuffing] 20 to be changed to 200?
 
 //Defines of Message content
 
@@ -76,6 +77,10 @@ static unsigned char RJ1[SU_TRAMA_SIZE] = {FLAG, A_EE, C_REJ_NS1, BCC(A_EE, C_RE
 
 #define ERROR -1
 #define ALL_OK 1
+
+#define CP_DATA 1
+#define CP_START 2
+#define CP_END 3
 
 /**
  * @brief Connection state
