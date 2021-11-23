@@ -250,18 +250,18 @@ int main(int argc, char** argv){
     ControlPacket control_p = createControlPacket(&file_info);
 
     printf("-------Sending control packet------ \n");
-/*
+    
     printf("size: %d\n\n", control_p.size);
 
     for(int c = 0; c < control_p.size; c++){
       printf("%x \n", control_p.packet[c]);
     }
-*/
+
     //send start packet
     //sendControlPacket(fd, START, control_p);
 
     //loop to send data
-    sendDataPacket(fd, file_info);
+    sendDataPacket(fd, &file_info);
 
     //send end packet 
     //sendControlPacket(fd, END, control_p);
