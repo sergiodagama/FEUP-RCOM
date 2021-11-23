@@ -102,9 +102,12 @@ int isRej(unsigned char c, int Ns){
 
 int Ns = 1;
 
-int llwrite(int fd, char* buffer, int length){
+int llwrite(int fd, unsigned char* buffer, int length){
+
+    
 
      Ns = (Ns == 0) ? 1 : 0;
+     printf("\nNS: %d\n", Ns);
 
      unsigned char buf_RR[SU_TRAMA_SIZE];
 
@@ -163,7 +166,8 @@ int llwrite(int fd, char* buffer, int length){
         if((res = write(fd, stuffed_frame, I_FRAME_SIZE)) < 0){ 
             perror("    Error writing DATA\n");
         }
-        printTramaRead(stuffed_frame, I_FRAME_SIZE);
+        
+        printData(stuffed_frame, I_FRAME_SIZE, WRITE);
 
         printf("\n");
         
@@ -176,7 +180,6 @@ int llwrite(int fd, char* buffer, int length){
         alarm(0); //Reset alarm
 
         //wait for response RR /REJ
-        printf(" - Receiving RR or RJ...\n");
 
         while (!STOP)
         { /* loop for input */
@@ -184,50 +187,43 @@ int llwrite(int fd, char* buffer, int length){
                 clean_buf(buf_RR, SU_TRAMA_SIZE);
             }
             res_2 += read(fd, &buf_RR[idx], 1);
-            //printTramaRead(buf_RR, SU_TRAMA_SIZE);
 
             if (checkRRByteRecieved(buf_RR, idx, Ns) == TRUE) //verifica se está a receber os bytes do SET corretos
                 idx++;
             else{
                 good_rr = FALSE;
                 res_2=0;
-                idx = 0; //nao seria voltar a enviar data? inves de recber RR again
-                printf("RR not good :(\n");
+                idx++;
+                //idx = 0; //nao seria voltar a enviar data? inves de recber RR again
+                printf("RR byte (%d) not good :(\n", idx);
             }
 
             if (idx == 5){ 
                 STOP = TRUE;
-
             }
         }
 
         if(isRej(buf_RR[2], Ns) || !good_rr){  //if it is rej or not good rr go back and send again 
+            printf(" - Received REJ...\n");
+            printData(buf_RR, SU_TRAMA_SIZE, READ);
+
             connect_attempt = 1;
         }
-        else{
+        else if (good_rr) {
             SENDING = FALSE;
         }
     }
 
-    if (STOP == TRUE) //se recebeu o SET corretamente, envia o UA para o Transmitter
+    if (STOP == TRUE)
     {
+        printf(" - Received RR...\n");
         //só faz print se valor correto
-        printTramaRead(buf_RR, SU_TRAMA_SIZE);
+        printData(buf_RR, SU_TRAMA_SIZE, READ);
     }
 
     printf("RES: %d\n", res);
     return res;
 }
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -245,6 +241,7 @@ int checkDataFrame(unsigned char* frame, int Nr){
     if (frame[1] != A_EE){
         return is_OK;
     }
+
     if (Nr){  //if Nr == 1 => frame[2] == 0
         if(frame[2] != C_NS0){
             return is_OK;
@@ -256,12 +253,12 @@ int checkDataFrame(unsigned char* frame, int Nr){
         }
     }
     if (Nr){  //if Nr == 1 => frame[2] == 0
-        if(frame[3] != BCC(A_EE, C_NS0)){
+        if(frame[3] != (A_EE^C_NS0)){
             return is_OK;
         }
     }
     if (!Nr){
-        if(frame[3] != BCC(A_EE, C_NS1)){
+        if(frame[3] != (A_EE^C_NS1)){
             return is_OK;
         }
     }
@@ -303,9 +300,11 @@ int checkDataFrame(unsigned char* frame, int Nr){
 
 int Nr = 0;
 
-int llread(int fd, char* buffer){
+int llread(int fd, unsigned char* buffer){
 
     Nr = (Nr == 0) ? 1 : 0; // change to be depdent on Ns received! TODO
+
+    printf("\nNR: %d\n", Nr);
 
     int res = 0, index = 0, stage = 0, STOP = FALSE;
 
@@ -331,18 +330,19 @@ int llread(int fd, char* buffer){
             }
         }
         printf("Before Reverse Stuffing: \n");
-        printTramaRead(frame, I_FRAME_SIZE);
+        printData(frame, I_FRAME_SIZE, READ);
 
         //reverse the byte stuffing
         original = reverseByteStuffing(I_FRAME_SIZE, frame);
 
-        printf("After Reverse Stuffing: \n");
-        printTramaRead(original, I_FRAME_SIZE);
+        //printf("After Reverse Stuffing: \n");
+        //printData(original, I_FRAME_SIZE, READ);
 
         //checking read frame
         if (checkDataFrame(original, Nr)){  
             STOP = TRUE;
             printf("\n DATA ALL OK - bytes read: %d\n", res);
+            buffer = original;
         }
         else{
             //sending REJ

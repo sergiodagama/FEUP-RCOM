@@ -69,7 +69,7 @@ int llopen(char* port, enum status stat, int* fid);
  * @param Nr current Nr
  * @return number of characters read, negative value in case of error
  */
-int llread(int fd, char* buffer);
+int llread(int fd, unsigned char* buffer);
 
 /**
  * @brief Writes a data frame and receives response RR or REJ
@@ -80,7 +80,7 @@ int llread(int fd, char* buffer);
  * @param Ns current Ns
  * @return written characters, negative value in case of error
  */
-int llwrite(int fd, char* buffer, int length);
+int llwrite(int fd, unsigned char* buffer, int length);
 
 /**
  * @brief Closes a connection

@@ -62,24 +62,24 @@ unsigned char* reverseByteStuffing(size_t size, unsigned char stuffed[]){
         if(stuffed[index] == ESCAPE && stuffed[index+1] == FLAG_XORED){
             original[i] = FLAG;
             index+=2;
-            printf("Inside 1\n");
+            //printf("Inside 1\n");
         }
         else if(stuffed[index] == ESCAPE && stuffed[index+1] == ESCAPE_XORED){
             original[i] = ESCAPE;
             index+=2;
-            printf("Inside 2\n");
+            //printf("Inside 2\n");
         }
         else if(stuffed[index+1] == FLAG){
             original[i] = stuffed[index];
             original[i+1] = FLAG;
             END_FLAG = 1;
             break;
-            printf("Inside 3\n");
+            //printf("Inside 3\n");
         }
         else{
             original[i] = stuffed[index];
             index++;
-            printf("Inside 4\n");
+            //printf("Inside 4\n");
         }
         i++;
     }

@@ -105,21 +105,52 @@ int sendDataPacket(int fd, FileInfo* file_info){
     int quant = 1024;
     int index = 0;
 
-    int s =  file_info->size;
+    //int s = file_info->size;
+    int s = 80;
     int bytes_sent; 
-    
+    /*
     while(s > 0){
       s-=quant;
       if(s < quant){
         quant = s;
       }
 
-      bytes_sent = llwrite(fd, dataChunk(file_info->data, index, quant), quant);
+      unsigned char* test = malloc(80);
+
+      for(int i = 0; i < 80; i++){
+        if (i % 2 != 0)
+          test[i] = 'a';
+        else 
+          test[i] = 'b';
+      }
+
+
+      //bytes_sent = llwrite(fd, dataChunk(file_info->data, index, quant), quant);
+
+  
+
+
 
       index += quant;
-    }
 
-    printf("BYTES SENT in send DATA: %d\n", bytes_sent);
+      printf("Data chunk - BYTES SENT in send DATA: %d\n", bytes_sent);
+    }*/
+
+        unsigned char* test = malloc(6);
+
+        for(int i = 0; i < 6; i++){
+          if (i % 2 != 0)
+            test[i] = 'a';
+          else 
+            test[i] = 'b';
+        }
+
+        //dataChunk(test, 0, 40)
+
+        bytes_sent = llwrite(fd, test , 6);
+         bytes_sent = llwrite(fd, test , 6);
+
+      //bytes_sent = llwrite(fd, dataChunk(test, 40, 40), 40);
 }
 
 int sendControlPacket(int fd, enum packet_id id, ControlPacket control_p){
@@ -223,17 +254,17 @@ int main(int argc, char** argv){
     ControlPacket control_p = createControlPacket(file_info);
 
     printf("-------Sending control packet------ \n");
-
+/*
     printf("size: %d\n\n", control_p.size);
     for(int c = 0; c < control_p.size; c++){
       printf("%x \n", control_p.packet[c]);
     }
-
+*/
     //send start packet
-    sendControlPacket(fd, START, control_p);
+    //sendControlPacket(fd, START, control_p);
 
     //loop to send data
-    //endDataPacket(fd, file_info);
+    sendDataPacket(fd, file_info);
 
     //send end packet 
     //sendControlPacket(fd, END, control_p);

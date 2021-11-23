@@ -16,9 +16,14 @@ int writeData(int fd, unsigned char *trama, int size){
     return i;
 }
 
-void printTramaRead(unsigned char *trama, int size){
-    for(int i = 0; i < size; i++)
-          printf("  r (%d) - 0x%x\n", i, trama[i]); 
+void printData(unsigned char *trama, int size, int read){
+    
+    for(int i = 0; i < size; i++){
+      if(read)
+        printf("  r (%d) - 0x%x\n", i, trama[i]); 
+      else
+        printf("  wr (%d) - 0x%x\n", i, trama[i]); 
+    }
 }
 
 void clean_buf(unsigned char *buf, int size){

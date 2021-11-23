@@ -154,7 +154,7 @@ int llopen_receiver(char * port, int* fid){
     if (STOP == TRUE) //se recebeu o SET corretamente, envia o UA para o Transmitter
     {
       //só faz print se valor correto
-      printTramaRead(buf_R, SU_TRAMA_SIZE);
+      printData(buf_R, SU_TRAMA_SIZE, READ);
 
       sleep(2);
       printf("\n");
@@ -213,7 +213,7 @@ int llclose_receiver(int fd){
 
     if(STOP && state_receiver!=FINISHED){
       printf(" - Received DISC...\n");
-      printTramaRead(buf_R, SU_TRAMA_SIZE);
+      printData(buf_R, SU_TRAMA_SIZE, READ);
 
       //Send receiver disconnect
       //Envio de DISC_R
@@ -232,7 +232,7 @@ int llclose_receiver(int fd){
 
   printf(" - Received UA_E...\n");
   //só faz print se valor correto
-  printTramaRead(buf_R, SU_TRAMA_SIZE);
+  printData(buf_R, SU_TRAMA_SIZE, READ);
 
   //     sleep(1);
   

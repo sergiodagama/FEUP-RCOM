@@ -159,7 +159,7 @@ int llopen_transmitter(char* port, int *fid){
 
     if (STOP == TRUE){
         //só faz print se valor correto
-        printTramaRead(buf_E, SU_TRAMA_SIZE);
+        printData(buf_E, SU_TRAMA_SIZE, READ);
     }
   }
 
@@ -226,7 +226,7 @@ int llclose_transmitter(int fd){
 
     }
   
-    printTramaRead(buf_E, SU_TRAMA_SIZE);//só faz print se valor correto
+    printData(buf_E, SU_TRAMA_SIZE, READ);//só faz print se valor correto
 
       //send UA
     printf(" - Sending UA_E...\n");
