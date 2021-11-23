@@ -1,14 +1,19 @@
 #include "../includes/api_transmitter.h"
 // #include "../includes/macrosLD.h"
 
+int connect_attempt = 1;
 
 volatile int STOP=FALSE;
-
-extern int flag, connect_attempt; 
 
 unsigned char buf_E[MAX_SIZE];
 
 enum state state_transmitter;
+
+void atende()                   // atende alarme
+{
+   printf(" - Alarme ring ring\n");
+   connect_attempt++;
+}
 
 int checkUAByteRecieved(unsigned char byte_recieved, int idx){
   int is_OK = FALSE;
@@ -127,14 +132,14 @@ int llopen_transmitter(char* port, int *fid){
     //Rececao do UA
     idx = 0;
     alarm(ALARM_SECONDS);
-    flag = 0;
+
 
     printf(" - Receiving UA...\n");
     while (!STOP) {       /* loop for input */
 
       //printf("before read\n");
       if ((res = read(fd, &buf_E[idx], 1)) < 0){
-        if (flag == 1){
+        if (errno == EINTR){
           printf("    Timed Out\n\n");
           break;
         }
@@ -199,10 +204,9 @@ int llclose_transmitter(int fd){
         
       idx = 0;
       alarm(ALARM_SECONDS);
-      flag = 0;
       while(!STOP){
         if((res = read(fd,&buf_E[idx],1))<0){
-          if (flag == 1){
+          if (errno = EINTR){
             printf("    Timed Out\n\n");
             break;
           }

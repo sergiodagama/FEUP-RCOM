@@ -146,12 +146,10 @@ int llwrite(int fd, unsigned char* buffer, int length){
 
     stuffed_frame = byteStuffing(length + 6, frame);
 
-    //write frame
-    signal(SIGALRM, atende);  // instala a rotina que atende interrupcao
-    siginterrupt(SIGALRM, 1); // quando o sinal SIGALRM é apanhado, provoca uma interrupção no read()
     int idx;
 
     connect_attempt = 1;
+    
   
     int SENDING = TRUE, STOP = FALSE;
 
@@ -173,11 +171,8 @@ int llwrite(int fd, unsigned char* buffer, int length){
         
         idx = 0;
         alarm(ALARM_SECONDS);
-        flag = 0;
         int res_2 = 0;
         int good_rr = TRUE;
-
-        alarm(0); //Reset alarm
 
         //wait for response RR /REJ
 
@@ -186,7 +181,18 @@ int llwrite(int fd, unsigned char* buffer, int length){
             if(idx == 0){
                 clean_buf(buf_RR, SU_TRAMA_SIZE);
             }
-            res_2 += read(fd, &buf_RR[idx], 1);
+            if( (res = read(fd, &buf_RR[idx], 1)) < 0){
+                if (errno == EINTR){
+                    printf("    Timed Out\n\n");
+                    break;
+                }
+                else{
+                    perror("    Read failed\n\n");
+
+                }
+            }
+
+            res_2+=res;
 
             if (checkRRByteRecieved(buf_RR, idx, Ns) == TRUE) //verifica se está a receber os bytes do SET corretos
                 idx++;
@@ -203,14 +209,18 @@ int llwrite(int fd, unsigned char* buffer, int length){
             }
         }
 
-        if(isRej(buf_RR[2], Ns) || !good_rr){  //if it is rej or not good rr go back and send again 
-            printf(" - Received REJ...\n");
-            printData(buf_RR, SU_TRAMA_SIZE, READ);
+        alarm(0); //Reset alarm
+        if(STOP){
 
-            connect_attempt = 1;
-        }
-        else if (good_rr) {
-            SENDING = FALSE;
+            if(isRej(buf_RR[2], Ns) || !good_rr){  //if it is rej or not good rr go back and send again 
+                printf(" - Received REJ...\n");
+                printData(buf_RR, SU_TRAMA_SIZE, READ);
+
+                connect_attempt = 1;
+            }
+            else if (good_rr) {
+                SENDING = FALSE;
+            }
         }
     }
 

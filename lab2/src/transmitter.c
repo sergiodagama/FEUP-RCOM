@@ -216,7 +216,7 @@ int main(int argc, char** argv){
     //openning connection
     if(llopen(argv[1], transmitter.status, &fd) < 0){
         perror("Error: transmitter llopen function call\n");
-        return ERROR;
+        return 0;
     }
 
     //checking errors in port file descriptor
