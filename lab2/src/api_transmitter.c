@@ -17,13 +17,13 @@ int checkUAByteRecieved(unsigned char byte_recieved, int idx){
   if((idx == 0 || idx == 4) && byte_recieved == FLAG){
     is_OK = TRUE;
   }
-  else if (idx == 1 && byte_recieved == A_ER){
+  else if (idx == 1 && byte_recieved == A_EE){
     is_OK = TRUE;
   }
   else if (idx == 2 && byte_recieved == C_UA){
     is_OK = TRUE;
   }
-  else if (idx == 3 && byte_recieved == BCC(A_ER, C_UA)){
+  else if (idx == 3 && byte_recieved == BCC(A_EE, C_UA)){
     is_OK = TRUE;
   }
 
@@ -159,7 +159,7 @@ int llopen_transmitter(char* port, int *fid){
 
     if (STOP == TRUE){
         //só faz print se valor correto
-        printTramaRead(buf_E, SU_TRAMA_SIZE);
+        printData(buf_E, SU_TRAMA_SIZE, READ);
     }
   }
 
@@ -226,7 +226,7 @@ int llclose_transmitter(int fd){
 
     }
   
-    printTramaRead(buf_E, SU_TRAMA_SIZE);//só faz print se valor correto
+    printData(buf_E, SU_TRAMA_SIZE, READ);//só faz print se valor correto
 
       //send UA
     printf(" - Sending UA_E...\n");

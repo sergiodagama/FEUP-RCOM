@@ -32,6 +32,7 @@
 #define ALARM_SECONDS 3
 #define MAX_SIZE 200
 #define SU_TRAMA_SIZE 5
+#define I_FRAME_SIZE 20  //4 bytes for header and 90 max for data + 2 bytes for header [96 max total before stuffing] 20 to be changed to 200?
 
 //Defines of Message content
 
@@ -57,10 +58,18 @@
 #define BCC(A, C) A^C
 
 static unsigned char SET[SU_TRAMA_SIZE] = {FLAG, A_EE, C_SET, BCC(A_EE, C_SET), FLAG};
-static unsigned char UA_E[SU_TRAMA_SIZE] = {FLAG, A_EE, C_UA, BCC(A_EE, C_DISC), FLAG};
-static unsigned char UA_R[SU_TRAMA_SIZE] = {FLAG, A_ER, C_UA, BCC(A_ER, C_UA), FLAG}; 
+
+static unsigned char UA_E[SU_TRAMA_SIZE] = {FLAG, A_ER, C_UA, BCC(A_ER, C_UA), FLAG};
+static unsigned char UA_R[SU_TRAMA_SIZE] = {FLAG, A_EE, C_UA, BCC(A_EE, C_UA), FLAG}; 
+
 static unsigned char DISC_E[SU_TRAMA_SIZE] = {FLAG, A_EE, C_DISC, BCC(A_EE, C_DISC), FLAG};
 static unsigned char DISC_R[SU_TRAMA_SIZE] = {FLAG, A_ER, C_DISC, BCC(A_ER, C_DISC), FLAG};
+
+static unsigned char RR0[SU_TRAMA_SIZE] = {FLAG, A_EE, C_RR_NS0, BCC(A_EE, C_RR_NS0), FLAG};
+static unsigned char RR1[SU_TRAMA_SIZE] = {FLAG, A_EE, C_RR_NS1, BCC(A_EE, C_RR_NS1), FLAG};
+
+static unsigned char RJ0[SU_TRAMA_SIZE] = {FLAG, A_EE, C_REJ_NS0, BCC(A_EE, C_REJ_NS0), FLAG};
+static unsigned char RJ1[SU_TRAMA_SIZE] = {FLAG, A_EE, C_REJ_NS1, BCC(A_EE, C_REJ_NS1), FLAG};
 
 #define BAUDRATE B38400
 #define FALSE 0
@@ -68,6 +77,13 @@ static unsigned char DISC_R[SU_TRAMA_SIZE] = {FLAG, A_ER, C_DISC, BCC(A_ER, C_DI
 
 #define ERROR -1
 #define ALL_OK 1
+
+#define CP_DATA 1
+#define CP_START 2
+#define CP_END 3
+
+#define READ 1
+#define WRITE 0
 
 /**
  * @brief Connection state

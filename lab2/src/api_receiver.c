@@ -57,13 +57,13 @@ int checkUA_E_ByteRecieved(unsigned char byte_recieved, int idx){
   if((idx == 0 || idx == 4) && byte_recieved == FLAG){
     is_OK = TRUE;
   }
-  else if (idx == 1 && byte_recieved == A_EE){
+  else if (idx == 1 && byte_recieved == A_ER){
     is_OK = TRUE;
   }
   else if (idx == 2 && byte_recieved == C_UA){
     is_OK = TRUE;
   }
-  else if (idx == 3 && byte_recieved == BCC(A_EE, C_UA)){
+  else if (idx == 3 && byte_recieved == BCC(A_ER, C_UA)){
     is_OK = TRUE;
   }
 
@@ -154,7 +154,7 @@ int llopen_receiver(char * port, int* fid){
     if (STOP == TRUE) //se recebeu o SET corretamente, envia o UA para o Transmitter
     {
       //só faz print se valor correto
-      printTramaRead(buf_R, SU_TRAMA_SIZE);
+      printData(buf_R, SU_TRAMA_SIZE, READ);
 
       sleep(2);
       printf("\n");
@@ -191,9 +191,10 @@ int llclose_receiver(int fd){
 
       res = read(fd, &buf_R[idx], 1);
 
-      if ((DISC_received == 1) && (idx == 2) && (buf_R[idx] == C_UA)){
+      if ((DISC_received == 1) && (idx == 1) && (buf_R[idx] == A_ER)){
         state_receiver=FINISHED;
       }
+
 
       if (checkDiscEByteRecieved(buf_R[idx], idx) || (checkUA_E_ByteRecieved(buf_R[idx], idx) && (state_receiver==FINISHED)))
         idx++;
@@ -212,7 +213,7 @@ int llclose_receiver(int fd){
 
     if(STOP && state_receiver!=FINISHED){
       printf(" - Received DISC...\n");
-      printTramaRead(buf_R, SU_TRAMA_SIZE);
+      printData(buf_R, SU_TRAMA_SIZE, READ);
 
       //Send receiver disconnect
       //Envio de DISC_R
@@ -229,8 +230,9 @@ int llclose_receiver(int fd){
     //se receber disconnect sai do loop
   }
 
+  printf(" - Received UA_E...\n");
   //só faz print se valor correto
-  printTramaRead(buf_R, SU_TRAMA_SIZE);
+  printData(buf_R, SU_TRAMA_SIZE, READ);
 
   //     sleep(1);
   

@@ -22,7 +22,7 @@
  * @param data the data array to be stuffed
  * @return stuffed data array with double of the size parameter
  */
-char* byteStuffing(size_t size, unsigned char data[]);
+unsigned char* byteStuffing(size_t size, unsigned char data[]);
 
 /**
  * @brief Reverses byte stuffing on stuffed data array passed
@@ -31,6 +31,6 @@ char* byteStuffing(size_t size, unsigned char data[]);
  * @param stuffed the stuffed data array
  * @return array with half the size of the value passed
  */
-char* reverseByteStuffing(size_t size, unsigned char stuffed[]);
+unsigned char* reverseByteStuffing(size_t size, unsigned char stuffed[]);
 
 #endif

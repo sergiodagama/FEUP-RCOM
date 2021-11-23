@@ -55,9 +55,11 @@ int main(int argc, char** argv){
     while(NOT_END){
         llread(int fd, char* buffer);
     }*/
-    unsigned char *data = malloc(100);
+    unsigned char *packet = malloc(10);
 
-    llread(fd, data, 1);
+    llread(fd, packet);
+    printf("\n");
+    llread(fd, packet);
 
     ////receive end packet 
 

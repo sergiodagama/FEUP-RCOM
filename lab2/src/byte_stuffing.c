@@ -1,6 +1,6 @@
 #include "../includes/byte_stuffing.h"
 
-char* byteStuffing(size_t size, unsigned char data[]){
+unsigned char* byteStuffing(size_t size, unsigned char data[]){
     if(size < 1){
         perror("Error: Size inferior to one");
         //return -1;
@@ -40,7 +40,7 @@ char* byteStuffing(size_t size, unsigned char data[]){
     return stuffed;
 }
 
-char* reverseByteStuffing(size_t size, unsigned char stuffed[]){
+unsigned char* reverseByteStuffing(size_t size, unsigned char stuffed[]){
     if(size < 1){
         perror("Error: Size inferior to one");
         //return -1;
@@ -52,29 +52,34 @@ char* reverseByteStuffing(size_t size, unsigned char stuffed[]){
 
     int index = 1, i = 1;
 
-    unsigned char* original = malloc(size/2);
+    unsigned char* original = malloc(size);
 
     original[0] = FLAG;
 
     int END_FLAG = 0;
 
-    while(!END_FLAG && index < size*2 - 1){
+    while(!END_FLAG){
         if(stuffed[index] == ESCAPE && stuffed[index+1] == FLAG_XORED){
             original[i] = FLAG;
             index+=2;
+            //printf("Inside 1\n");
         }
         else if(stuffed[index] == ESCAPE && stuffed[index+1] == ESCAPE_XORED){
             original[i] = ESCAPE;
             index+=2;
+            //printf("Inside 2\n");
         }
         else if(stuffed[index+1] == FLAG){
             original[i] = stuffed[index];
             original[i+1] = FLAG;
             END_FLAG = 1;
+            break;
+            //printf("Inside 3\n");
         }
         else{
             original[i] = stuffed[index];
             index++;
+            //printf("Inside 4\n");
         }
         i++;
     }
