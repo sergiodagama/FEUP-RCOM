@@ -222,7 +222,7 @@ int main(int argc, char** argv){
 
     ControlPacket control_p = createControlPacket(file_info);
 
-    printf("-------Sending control packet------ \n")
+    printf("-------Sending control packet------ \n");
 
     printf("size: %d\n\n", control_p.size);
     for(int c = 0; c < control_p.size; c++){
