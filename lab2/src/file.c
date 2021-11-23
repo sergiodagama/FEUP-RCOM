@@ -1,12 +1,9 @@
 #include "../includes/file.h"
 
 int get_file_size(FileInfo* fi, FILE * file){
-  printf("HEREEE    1\n");
-  struct stat st;
-  fstat(fileno(file), &st);
-  fi->size = st.st_size;
-
-   printf("HEREEE    4\n");
+  fseek(file, 0, SEEK_END);
+  fi->size = ftell(file); 
+  fseek(file, 0, SEEK_SET); 
   return 0;
 }
 
@@ -24,11 +21,11 @@ int fillInfo(FileInfo* fi, FILE *file, char *file_name){
 
   fi->name = file_name;
   
-  if(get_file_size(file, fi)<0){ //preenche o file->size
+  if(get_file_size(fi, file)<0){ //preenche o file->size
     return -1;
   }
 
-  if(read_file(file, fi)<0){//preenche o file->data
+  if(read_file(fi, file)<0){//preenche o file->data
     return -1;
   }
   return 0;

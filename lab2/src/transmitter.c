@@ -4,8 +4,9 @@ ControlPacket createControlPacket(FileInfo* file_info){
   ControlPacket control;
 
   unsigned char V1[sizeof(unsigned long)];
-  int size = file_info->size;
+  unsigned long size = file_info->size;
   unsigned int L1 = 0;
+
 
   
 
@@ -18,12 +19,9 @@ ControlPacket createControlPacket(FileInfo* file_info){
     L1--;
   }
 
-  // control.file_size = (unsigned char *)malloc(num);
-  // memcpy(control.file_size, buf, num);
-  // control.filesize_size = num;
 
   int i = 0;
-  // control packet
+  //C
   control.packet = (unsigned char *)malloc(i + 1);
   control.packet[i++] = CP_START;
   control.packet = (unsigned char *)realloc(control.packet, (i + 1));
@@ -32,7 +30,7 @@ ControlPacket createControlPacket(FileInfo* file_info){
   control.packet = (unsigned char *)realloc(control.packet, (i + 1));
   control.packet[i++] = L1;
 
-  for (int j = 0; j < L1; j++) {
+  for (int j = L1-1; j >=0; j--) {
     control.packet = (unsigned char *)realloc(control.packet, (i + 1));
     control.packet[i++] = V1[j];
   }
@@ -233,16 +231,14 @@ int main(int argc, char** argv){
 
     //openning file and filling file information
     FILE *file_fd;
-    FileInfo *file_info = malloc(sizeof(FileInfo));
-
-    printf("ARGV2: %s\n", argv[2]);
+    FileInfo file_info;
 
     if((file_fd = fopen("src/pinguim.gif", "rb")) == NULL){
       perror("Error opening file to send\n");
       return ERROR;
     }
     
-    if(fillInfo(file_info, file_fd, argv[2])<0){ 
+    if(fillInfo(&file_info, file_fd, argv[2])<0){ 
       perror("Error filling file information\n");
       return ERROR;
     }
@@ -251,11 +247,12 @@ int main(int argc, char** argv){
     
     sleep(1);
 
-    ControlPacket control_p = createControlPacket(file_info);
+    ControlPacket control_p = createControlPacket(&file_info);
 
     printf("-------Sending control packet------ \n");
 /*
     printf("size: %d\n\n", control_p.size);
+
     for(int c = 0; c < control_p.size; c++){
       printf("%x \n", control_p.packet[c]);
     }
