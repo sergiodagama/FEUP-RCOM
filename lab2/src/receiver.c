@@ -58,7 +58,6 @@ int main(int argc, char** argv){
     unsigned char *packet = malloc(10);
 
     llread(fd, packet);
-    sleep(30);
     printf("\n");
     llread(fd, packet);
 
