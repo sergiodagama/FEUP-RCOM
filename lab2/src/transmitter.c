@@ -1,52 +1,102 @@
 #include "../includes/transmitter.h"
 
-ControlPacket* createControlPacket(FileInfo* file_info){
+ControlPacket createControlPacket(FileInfo* file_info){
+  ControlPacket control;
+
+  unsigned char V1[sizeof(unsigned long)];
+  int size = file_info->size;
+  unsigned int L1 = 0;
+
   
-  unsigned char * converted = malloc(50);
 
-  ControlPacket *controlpacket = malloc(sizeof(ControlPacket));
+  for (int c = 0; c < sizeof(unsigned long); c++) {
+    V1[c] = (size >> (8 * c)) & 0xff;
+    L1 += 1;
+  }
+  for (int c = sizeof(unsigned long) - 1; c != 0; c--) {
+    if (V1[c] != 0) break;
+    L1--;
+  }
 
+  // control.file_size = (unsigned char *)malloc(num);
+  // memcpy(control.file_size, buf, num);
+  // control.filesize_size = num;
 
-  converted[0] =  CP_START;
-
-  converted[1] = 0;
   int i = 0;
+  // control packet
+  control.packet = (unsigned char *)malloc(i + 1);
+  control.packet[i++] = CP_START;
+  control.packet = (unsigned char *)realloc(control.packet, (i + 1));
+  // file size
+  control.packet[i++] = 0x00; //T1 = tamanho do ficheiro
+  control.packet = (unsigned char *)realloc(control.packet, (i + 1));
+  control.packet[i++] = L1;
 
-  printf("\n");
-
-  while(*(file_info->name + i) != '\0'){
-    converted[i+3] = *(file_info->name + i);
-    printf(" (%c) - 0x%x - ", *(file_info->name + i), *(file_info->name + i));
-    i++;
+  for (int j = 0; j < L1; j++) {
+    control.packet = (unsigned char *)realloc(control.packet, (i + 1));
+    control.packet[i++] = V1[j];
   }
-  converted[2] = i;
-
-  printf("\n");
-
-/*
-  unsigned char size_dataSize[sizeof(unsigned long)];
-
-  memcpy()
-
-  size_t size_of_size = sizeof(unsigned long);
-*/
-  converted[i+3]= 1;
-  //converted[i+2]= (unsigned short) size_of_size;
-  converted[i+3+1]= 4;
-  converted[i+3+2]= 0;
-  converted[i+3+3]= 0;
-  converted[i+3+4]= 0;
-  converted[i+3+5]= 1;
-  /*
-  for(int k = 0; k < size_of_size; k++){
-    converted[k+i+3] = *(file_info->size + k);
+  control.packet = (unsigned char *)realloc(control.packet, (i + 1));
+  // file name
+  control.packet[i++] = 0x1; //T1 = nome do ficheiro
+  control.packet = (unsigned char *)realloc(control.packet, (i + 1));
+  control.packet[i++] = strlen(file_info->name);
+  control.packet = (unsigned char *)realloc(control.packet, (i + 1));
+  for (int j = 0; j < strlen(file_info->name); j++) {
+    control.packet[i++] = file_info->name[j];
+    control.packet = (unsigned char *)realloc(control.packet, (i + 1));
   }
-*/
 
-  controlpacket->packet = converted;
-  controlpacket->size = i+3+6;
+  control.size = i;
+  return control;
 
-  return controlpacket;
+
+
+//   unsigned char * converted = malloc(50);
+
+//   ControlPacket *controlpacket = malloc(sizeof(ControlPacket));
+
+
+//   converted[0] =  CP_START;
+
+//   converted[1] = 0;
+//   int i = 0;
+
+//   printf("\n");
+
+//   while(*(file_info->name + i) != '\0'){
+//     converted[i+3] = *(file_info->name + i);
+//     printf(" (%c) - 0x%x - ", *(file_info->name + i), *(file_info->name + i));
+//     i++;
+//   }
+//   converted[2] = i;
+
+//   printf("\n");
+
+// /*
+//   unsigned char size_dataSize[sizeof(unsigned long)];
+
+//   memcpy()
+
+//   size_t size_of_size = sizeof(unsigned long);
+// */
+//   converted[i+3]= 1;
+//   //converted[i+2]= (unsigned short) size_of_size;
+//   converted[i+3+1]= 4;
+//   converted[i+3+2]= 0;
+//   converted[i+3+3]= 0;
+//   converted[i+3+4]= 0;
+//   converted[i+3+5]= 1;
+//   /*
+//   for(int k = 0; k < size_of_size; k++){
+//     converted[k+i+3] = *(file_info->size + k);
+//   }
+// */
+
+//   controlpacket->packet = converted;
+//   controlpacket->size = i+3+6;
+
+//   return controlpacket;
 }
 
 //sendPacket
@@ -72,7 +122,7 @@ int sendDataPacket(int fd, FileInfo* file_info){
     printf("BYTES SENT in send DATA: %d\n", bytes_sent);
 }
 
-int sendControlPacket(int fd, enum packet_id id, FileInfo* file_info){
+int sendControlPacket(int fd, enum packet_id id, ControlPacket control_p){
   /*
   //TESTING PURPOSES
   unsigned char testData[4];
@@ -82,25 +132,23 @@ int sendControlPacket(int fd, enum packet_id id, FileInfo* file_info){
   }
   testData[2] = FLAG;
 */
-  ControlPacket* control_p = malloc(sizeof(ControlPacket));
-
-  control_p = createControlPacket(file_info);
 
   int bytes_sent;
 
   //START PACKET
   if(id == START){
-    bytes_sent = llwrite(fd, control_p->packet, control_p->size);
+    bytes_sent = llwrite(fd, control_p.packet, control_p.size);
   }
 
   //END PACKET
   else if(id == END){
   
-    control_p->packet[0] =  CP_END;
-    bytes_sent = llwrite(fd, control_p->packet,  control_p->size);
+    control_p.packet[0] =  CP_END;
+    bytes_sent = llwrite(fd, control_p.packet,  control_p.size);
   }
 
   printf("BYTES SENT in send DATA: %d\n", bytes_sent);
+  return bytes_sent;
 }
 
 /**
@@ -172,14 +220,23 @@ int main(int argc, char** argv){
     
     sleep(1);
 
+    ControlPacket control_p = createControlPacket(file_info);
+
+    printf("-------Sending control packet------ \n")
+
+    printf("size: %d\n\n", control_p.size);
+    for(int c = 0; c < control_p.size; c++){
+      printf("%x \n", control_p.packet[c]);
+    }
+
     //send start packet
-    sendControlPacket(fd, START, file_info);
+    sendControlPacket(fd, START, control_p);
 
     //loop to send data
-    s//endDataPacket(fd, file_info);
+    //endDataPacket(fd, file_info);
 
     //send end packet 
-    //sendControlPacket(fd, END, file_info);
+    //sendControlPacket(fd, END, control_p);
 
     printf("\n----------ALL DATA SENT----------\n\n");
     

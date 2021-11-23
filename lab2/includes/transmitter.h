@@ -25,10 +25,10 @@ typedef struct ControlPacket {
 
 } ControlPacket;
 
-int sendControlPacket(int fd, enum packet_id id, FileInfo* file_info);
+int sendControlPacket(int fd, enum packet_id id, ControlPacket control_p);
 
 int sendDataPacket(int fd, FileInfo* file_info);
 
-ControlPacket* createControlPacket(FileInfo* file_info);
+ControlPacket createControlPacket(FileInfo* file_info);
 
 #endif
