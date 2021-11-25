@@ -276,7 +276,7 @@ int checkDataFrame(unsigned char* frame, int Nr){
     printf("LAST FLAG: %d\n", last_flag);
 
     while(i+4 < last_flag-1){  
-        printf("while-> frame %x\n", frame[4+i]);
+        // printf("while-> frame %x\n", frame[4+i]);
         BCC2 = BCC(frame[4+i], BCC2);
         i++;
     }

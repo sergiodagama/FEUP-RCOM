@@ -103,52 +103,27 @@ int sendDataPacket(int fd, FileInfo* file_info){
     int quant = 1024;
     int index = 0;
 
-    //int s = file_info->size;
-    int s = 80;
+    int s = file_info->size;
     int bytes_sent; 
-    /*
+    
     while(s > 0){
-      s-=quant;
       if(s < quant){
         quant = s;
+        s = 0;
       }
+      else
+        s -= quant;
 
-      unsigned char* test = malloc(80);
-
-      for(int i = 0; i < 80; i++){
-        if (i % 2 != 0)
-          test[i] = 'a';
-        else 
-          test[i] = 'b';
-      }
-
-
-      //bytes_sent = llwrite(fd, dataChunk(file_info->data, index, quant), quant);
-
+      bytes_sent = llwrite(fd, dataChunk(file_info->data, index, quant), quant);
   
-
-
-
       index += quant;
 
       printf("Data chunk - BYTES SENT in send DATA: %d\n", bytes_sent);
-    }*/
+    }
 
-        unsigned char* test = malloc(6);
+    printf("I'm done sending data!\n");
 
-        for(int i = 0; i < 6; i++){
-          if (i % 2 != 0)
-            test[i] = 'a';
-          else 
-            test[i] = 'b';
-        }
-
-        //dataChunk(test, 0, 40)
-
-        bytes_sent = llwrite(fd, test , 6);
-         bytes_sent = llwrite(fd, test , 6);
-
-      //bytes_sent = llwrite(fd, dataChunk(test, 40, 40), 40);
+  return 0;
 }
 
 int sendControlPacket(int fd, enum packet_id id, ControlPacket control_p){
