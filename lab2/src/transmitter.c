@@ -100,6 +100,7 @@ ControlPacket createControlPacket(FileInfo* file_info){
 //sendPacket
 
 int sendDataPacket(int fd, FileInfo* file_info){   
+  
     int quant = 1024;
     int index = 0;
 
@@ -121,7 +122,10 @@ int sendDataPacket(int fd, FileInfo* file_info){
       printf("Data chunk - BYTES SENT in send DATA: %d\n", bytes_sent);
     }
 
+/*
     printf("I'm done sending data!\n");
+    llwrite(fd, dataChunk(file_info->data, 0, 50), 50);
+    */
 
   return 0;
 }

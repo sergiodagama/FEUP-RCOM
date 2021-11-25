@@ -60,7 +60,7 @@ int main(int argc, char** argv){
     unsigned char *packet = malloc(I_FRAME_SIZE);
     unsigned char* full_data = malloc(10968);
 
-    unsigned char* data = malloc(10968);
+    unsigned char* data = malloc(1024);
     int idx = 0;
     
     while(1){
@@ -68,7 +68,7 @@ int main(int argc, char** argv){
 
         llread(fd, packet);
 
-        for(int i = 0; i < 1018; i++){
+        for(int i = 0; i < 1024; i++){
             if(i < 4)
                 continue;
             else{
@@ -76,14 +76,30 @@ int main(int argc, char** argv){
             }
         }
 
-       for(int j = 0; j < 1018; j++){
-           full_data[(1018*idx)+j] = data[j];
+       for(int j = 0; j < 1024; j++){
+           full_data[(1024*idx)+j] = data[j];
+           
        }
+       
 
         idx++;
-
+       
         ////receive end packet 
     }
+    
+
+
+    /*llread(fd, packet);
+
+    printf("HEREEEE BROOOO\n");
+    printData(packet, I_FRAME_SIZE, 1);
+
+
+       for(int j = 0; j < 50; j++){
+           full_data[j] = data[j];
+           
+       }
+       */
 
     fwrite(full_data, sizeof (unsigned char), 10968, file_fd1); 
     
