@@ -1,6 +1,6 @@
-#include "api.h"
+#include "../includes/byte_stuffing.h"
 
-char* byteStuffing(size_t size, unsigned char data[]){
+unsigned char* byteStuffing(size_t size, unsigned char data[]){
     if(size < 1){
         perror("Error: Size inferior to one");
         //return -1;
@@ -40,7 +40,7 @@ char* byteStuffing(size_t size, unsigned char data[]){
     return stuffed;
 }
 
-char* reverseByteStuffing(size_t size, unsigned char stuffed[]){
+unsigned char* reverseByteStuffing(size_t size, unsigned char stuffed[]){
     if(size < 1){
         perror("Error: Size inferior to one");
         //return -1;
@@ -52,71 +52,37 @@ char* reverseByteStuffing(size_t size, unsigned char stuffed[]){
 
     int index = 1, i = 1;
 
-    unsigned char* original = malloc(size/2);
+    unsigned char* original = malloc(size);
 
     original[0] = FLAG;
 
     int END_FLAG = 0;
 
-    while(!END_FLAG && index < size*2 - 1){
+    while(!END_FLAG){
         if(stuffed[index] == ESCAPE && stuffed[index+1] == FLAG_XORED){
             original[i] = FLAG;
             index+=2;
+            //printf("Inside 1\n");
         }
         else if(stuffed[index] == ESCAPE && stuffed[index+1] == ESCAPE_XORED){
             original[i] = ESCAPE;
             index+=2;
+            //printf("Inside 2\n");
         }
         else if(stuffed[index+1] == FLAG){
             original[i] = stuffed[index];
             original[i+1] = FLAG;
             END_FLAG = 1;
+            break;
+            //printf("Inside 3\n");
         }
         else{
             original[i] = stuffed[index];
             index++;
+            //printf("Inside 4\n");
         }
         i++;
     }
 
     return original;
-}
-
-//just for testing purposes
-int main(){
-
-    unsigned char data[20] = {0x7e, 0x02, 0x03, 0x7e, 0x05, 0x06, 0x7e, 0x08, 0x7d, 0x10, 0x11, 0x12, 0x13, 0x14, 0x7e, 0x7d, 0x17, 0x7e, 0x19, 0x7e};
-
-    size_t size = sizeof data / sizeof data[0];
-
-    printf("DATA BEFORE STUFFING\n");
-    printf("Data Size: %u\n", size);
-
-    printf("Trama: ");
-    for(int i = 0; i < sizeof(data); i++){
-        printf("%x ", data[i]);
-    }
-
-    unsigned char* stuffed = byteStuffing(size, data);
-
-    if(stuffed == NULL) perror("Error: error on byteStuffing function");
-
-    printf("\n\nDATA AFTER STUFFING\n");
-    printf("Stuffed Size: %u \n", size*2);
-
-    printf("Trama: ");
-    for(int i = 0; i < size*2; i++){
-        printf("%x ", *(stuffed + i));
-    }
-
-    // REVERSE BYTE SUTFFING TESTING
-    unsigned char* original = reverseByteStuffing(size*2, stuffed);
-
-    printf("\n\nDATA AFTER REVERSE STUFFING\n");
-    printf("Trama: ");
-    for(int i = 0; i < size; i++){
-        printf("%x ", *(original + i));
-    }
-
-    return 0;
 }
