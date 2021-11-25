@@ -135,7 +135,7 @@ int llwrite(int fd, unsigned char* buffer, int length){
 
     for(int i = 0; i < length; i++){  //Data
         frame[4 + i] = buffer[i];
-        BCC2 = BCC(buffer[i], BCC2);
+        BCC2 = buffer[i]^BCC2;
     }
 
     frame[length + 4] = BCC2; //BCC2 TODO
@@ -167,7 +167,7 @@ int llwrite(int fd, unsigned char* buffer, int length){
             perror("    Error writing DATA\n");
         }
         
-        printData(stuffed_frame, I_FRAME_SIZE, WRITE);
+        //printData(stuffed_frame, I_FRAME_SIZE, WRITE);
 
         printf("\n");
         
@@ -276,17 +276,17 @@ int checkDataFrame(unsigned char* frame, int Nr){
     printf("LAST FLAG: %d\n", last_flag);
 
     while(i+4 < last_flag-1){  
-        printf("while-> frame %x\n", frame[4+i]);
+        // printf("while-> frame %x\n", frame[4+i]);
         BCC2 = BCC(frame[4+i], BCC2);
         i++;
     }
     if(BCC2 != frame[last_flag-1]){
-        printf("HEREEEE\n");
+        //printf("HEREEEE\n");
         return is_OK;
     }
     
     if(FLAG != frame[last_flag]){
-        printf("HEREEEE 22222222222\n");
+        //printf("HEREEEE 22222222222\n");
         return is_OK;
     }
     
@@ -330,7 +330,7 @@ int llread(int fd, unsigned char* buffer){
             }
         }
         printf("Before Reverse Stuffing: \n");
-        printData(frame, I_FRAME_SIZE, READ);
+       // printData(frame, I_FRAME_SIZE, READ);
 
         //reverse the byte stuffing
         original = reverseByteStuffing(I_FRAME_SIZE, frame);
@@ -342,7 +342,9 @@ int llread(int fd, unsigned char* buffer){
         if (checkDataFrame(original, Nr)){  
             STOP = TRUE;
             printf("\n DATA ALL OK - bytes read: %d\n", res);
-            buffer = original;
+             for (int q = 0; q < I_FRAME_SIZE; q++) {
+                buffer[q] = original[q];
+             }
         }
         else{
             //sending REJ
@@ -367,7 +369,7 @@ int llread(int fd, unsigned char* buffer){
      
     if (STOP == TRUE) { //se recebeu o I Frame corretamente, envia o RR ou REJ para o Transmitter  (MISSING REJ)
 
-      sleep(2);
+      //sleep(2);
       printf("\n");
 
       //Envio de RR

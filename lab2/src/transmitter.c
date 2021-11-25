@@ -100,55 +100,31 @@ ControlPacket createControlPacket(FileInfo* file_info){
 //sendPacket
 
 int sendDataPacket(int fd, FileInfo* file_info){   
+  
     int quant = 1024;
     int index = 0;
 
-    //int s = file_info->size;
-    int s = 80;
-    int bytes_sent; 
-    /*
+    int s = file_info->size;
+    int bytes_sent = 0; 
+    
     while(s > 0){
-      s-=quant;
-      if(s < quant){
-        quant = s;
-      }
+      if(s < quant) quant = s;
 
-      unsigned char* test = malloc(80);
+        s -= quant;
 
-      for(int i = 0; i < 80; i++){
-        if (i % 2 != 0)
-          test[i] = 'a';
-        else 
-          test[i] = 'b';
-      }
-
-
-      //bytes_sent = llwrite(fd, dataChunk(file_info->data, index, quant), quant);
-
-  
-
-
+      bytes_sent += llwrite(fd, dataChunk(file_info->data, index, quant), quant);
 
       index += quant;
+    }
 
-      printf("Data chunk - BYTES SENT in send DATA: %d\n", bytes_sent);
-    }*/
+    printf("BYTES SENT - DATA PACKETS: %d\n", bytes_sent);
 
-        unsigned char* test = malloc(6);
+/*
+    printf("I'm done sending data!\n");
+    llwrite(fd, dataChunk(file_info->data, 0, 50), 50);
+    */
 
-        for(int i = 0; i < 6; i++){
-          if (i % 2 != 0)
-            test[i] = 'a';
-          else 
-            test[i] = 'b';
-        }
-
-        //dataChunk(test, 0, 40)
-
-        bytes_sent = llwrite(fd, test , 6);
-         bytes_sent = llwrite(fd, test , 6);
-
-      //bytes_sent = llwrite(fd, dataChunk(test, 40, 40), 40);
+  return 0;
 }
 
 int sendControlPacket(int fd, enum packet_id id, ControlPacket control_p){
@@ -233,7 +209,12 @@ int main(int argc, char** argv){
     FILE *file_fd;
     FileInfo file_info;
 
-    if((file_fd = fopen("src/pinguim.gif", "rb")) == NULL){
+    char file_name[1000];
+    strcpy(file_name, "src/");
+    strcat(file_name, argv[2]);
+
+
+    if((file_fd = fopen(file_name, "rb")) == NULL){
       perror("Error opening file to send\n");
       return ERROR;
     }

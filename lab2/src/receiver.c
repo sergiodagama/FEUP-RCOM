@@ -49,19 +49,59 @@ int main(int argc, char** argv){
     //receiving data TODO
 
     ////receive start packet
+    FILE *file_fd1;
+
+    if((file_fd1 = fopen("src/pinguim2.gif", "wb")) == NULL){
+      perror("Error opening file to send\n");
+      return ERROR;
+    }
 
     ////loop to receive data
-    /*
-    while(NOT_END){
-        llread(int fd, char* buffer);
-    }*/
-    unsigned char *packet = malloc(10);
+    unsigned char *packet = malloc(I_FRAME_SIZE);
+    unsigned char* full_data = malloc(10968);
 
-    llread(fd, packet);
-    printf("\n");
-    llread(fd, packet);
+    unsigned char* data = malloc(1024);
+    int idx = 0;
+    
+    while(1){
+        if(idx == 11) break;
 
-    ////receive end packet 
+        llread(fd, packet);
+
+        for(int i = 0; i < 1024; i++){
+            data[i] = packet[i+4];
+        }
+
+       for(int j = 0; j < 1024; j++){
+           full_data[(1024*idx)+j] = data[j];
+           
+       }
+       
+
+        idx++;
+        
+        clean_buf(packet, I_FRAME_SIZE);
+
+       
+        ////receive end packet 
+    }
+    
+
+
+    /*llread(fd, packet);
+
+    printf("HEREEEE BROOOO\n");
+    printData(packet, I_FRAME_SIZE, 1);
+
+
+       for(int j = 0; j < 50; j++){
+           full_data[j] = data[j];
+           
+       }
+       */
+
+    fwrite(full_data, sizeof (unsigned char), 10968, file_fd1); 
+    
 
     printf("\n--------ALL DATA RECEIVED--------\n\n");
     

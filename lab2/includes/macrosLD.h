@@ -12,7 +12,8 @@
       C - Campo de Controlo -> 0 S 0 0 0 0 0 0  - S = N(s)
       D1, Data, Dn - Campo de Informação (contém pacote gerado pela Aplicação)
       BCC1/2 - Campos de Protecção independentes (1 – cabeçalho, 2 – dados)
-             - XOR (^) entre A e C
+              BCC1 - XOR (^) entre A e C
+              BCC2 - XOR (^) entre todos os Ds
  
     - Tramas de Supervisão (S) e Não Numeradas (U):
       | F | A | C | BCC1 | F |
@@ -28,11 +29,14 @@
       BCC1 - Campo de Protecção (cabeçalho)
 */
 
+#define FALSE 0
+#define TRUE 1
+
 #define MAX_ATTEMPS 3
 #define ALARM_SECONDS 3
 #define MAX_SIZE 200
 #define SU_TRAMA_SIZE 5
-#define I_FRAME_SIZE 20  //4 bytes for header and 90 max for data + 2 bytes for header [96 max total before stuffing] 20 to be changed to 200?
+#define I_FRAME_SIZE 2060  //4 bytes for header and 90 max for data + 2 bytes for header [96 max total before stuffing] 20 to be changed to 200?
 
 //Defines of Message content
 
