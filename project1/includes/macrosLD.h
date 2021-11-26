@@ -1,7 +1,6 @@
 #ifndef MACROSLD_H
 #define MACROSLD_H
 
-
 /*Formato e tipos de Tramas
 
     - Tramas de Informação (I):
@@ -36,10 +35,10 @@
 #define ALARM_SECONDS 3
 #define MAX_SIZE 200
 #define SU_TRAMA_SIZE 5
-#define I_FRAME_SIZE 2060  //4 bytes for header and 90 max for data + 2 bytes for header [96 max total before stuffing] 20 to be changed to 200?
+#define I_FRAME_SIZE 410  //1 flag + 3 bytes header + 100 data + 1 bytes header + 1 flag  = (tirando as flags) 104 => 104*2 = 208 + 2 = 210
+#define DATA_SIZE 200
 
 //Defines of Message content
-
 #define FLAG 0x7E       //01111110 - valor dito nos slides
 #define A_EE 0x03       //comandos Enviados pelo Emissor (EE) e Respostas enviadas pelo Recetor
 #define A_ER 0x01       //comandos Enviados pelo Recetor (ER) e Respostas enviadas pelo Emissor
@@ -88,6 +87,12 @@ static unsigned char RJ1[SU_TRAMA_SIZE] = {FLAG, A_EE, C_REJ_NS1, BCC(A_EE, C_RE
 
 #define READ 1
 #define WRITE 0
+
+/**
+ * @brief Control packet flags
+ * 
+ */
+enum packet_id {START, DATA, END};
 
 /**
  * @brief Connection state

@@ -9,4 +9,8 @@
  */
  #include "api.h"
 
+ int checkControlPacket(enum packet_id id, unsigned char* packet);
+
+ unsigned long receiveStartPacket(int fd, unsigned char* name);
+
  #endif

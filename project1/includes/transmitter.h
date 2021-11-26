@@ -9,8 +9,6 @@
  */
 #include "api.h"
 
-enum packet_id {START, DATA, END};
-
 typedef struct ControlPacket {
     // unsigned char  C; //control value -> 2 for start, 3 for end
     // unsigned char T1;  //type of 0 -> file size, 1 -> file name

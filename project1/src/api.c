@@ -107,7 +107,7 @@ int llwrite(int fd, unsigned char* buffer, int length){
     
 
      Ns = (Ns == 0) ? 1 : 0;
-     printf("\nNS: %d\n", Ns);
+     //printf("\nNS: %d\n", Ns);
 
      unsigned char buf_RR[SU_TRAMA_SIZE];
 
@@ -135,11 +135,13 @@ int llwrite(int fd, unsigned char* buffer, int length){
 
     for(int i = 0; i < length; i++){  //Data
         frame[4 + i] = buffer[i];
-        BCC2 = BCC(buffer[i], BCC2);
+        BCC2 = buffer[i]^BCC2;
     }
 
     frame[length + 4] = BCC2; //BCC2 TODO
     frame[length + 5] = FLAG; //FLAG
+
+    //printData(frame, I_FRAME_SIZE, WRITE);
 
     //frame stuffing
     unsigned char* stuffed_frame = malloc(I_FRAME_SIZE);
