@@ -177,7 +177,7 @@ int main(int argc, char** argv){
     }
 
     //send start packet
-    //sendControlPacket(fd, START, control_p);
+    sendControlPacket(fd, START, control_p);
 
     //loop to send data
     sendDataPacket(fd, &file_info);

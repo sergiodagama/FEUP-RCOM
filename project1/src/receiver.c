@@ -1,13 +1,18 @@
 #include "../includes/receiver.h"
 
+int checkControlPacket(enum packet_id id, unsigned char* frame){
 
-int checkControlPacket(enum packet_id id, unsigned char* packet){
     if(id == START){
-        if(packet[0] == CP_START) return TRUE;
-        else return FALSE;
+        if(frame[4] == CP_START){
+            return TRUE;
+        }
+         
+        else{ 
+            return FALSE;
+        }
     }
     if(id == END){
-        if(packet[0] == CP_END) return TRUE;
+        if(frame[4] == CP_END) return TRUE;
         else return FALSE;
     }
 }
@@ -19,11 +24,12 @@ unsigned long receiveStartPacket(int fd, unsigned char* name){
 
     while(TRUE){
         llread(fd, packet);
+        
+        //printData(packet, I_FRAME_SIZE, 1);
 
-        printf("HERE\n");
-        printData(packet, I_FRAME_SIZE, 1);
-
-        if(checkControlPacket(START, packet)) break;
+        if(checkControlPacket(START, packet)){
+            break;
+        } 
     }
 
     // Parsing start packet TODO
@@ -84,9 +90,9 @@ int main(int argc, char** argv){
 
     // Receive start control packet
     
-    //file_size = receiveStartPacket(fd, name);
+    file_size = receiveStartPacket(fd, name);
 
-    strcat(file_name, "pinguim.gif");
+    strcat(file_name, "pinguim.gif");  //change to start packet info
 
     // Creating received file
     FILE *file_fd1;
@@ -114,6 +120,8 @@ int main(int argc, char** argv){
         clean_buf(data, DATA_SIZE);
 
         llread(fd, packet);
+
+        //checkControlPacket();
 
         for(int i = 0; i < DATA_SIZE; i++){
             data[i] = packet[i+4];
