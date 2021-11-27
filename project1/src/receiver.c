@@ -129,17 +129,16 @@ int main(int argc, char** argv){
     int NOT_END = TRUE;
     
     while(NOT_END){
-        if(idx > (file_size/DATA_SIZE)){
-            NOT_END = FALSE;
-            break;
-        }
 
         clean_buf(packet, I_FRAME_SIZE);
         clean_buf(data, DATA_SIZE);
 
         llread(fd, packet);
 
-        //checkControlPacket();
+        if(checkControlPacket(END, packet) == TRUE){
+            NOT_END = FALSE;
+            break;
+        }
 
         for(int i = 0; i < DATA_SIZE; i++){
             data[i] = packet[i+4];
@@ -152,13 +151,8 @@ int main(int argc, char** argv){
         idx++;
     }
 
-    // Receiving end packet
-    clean_buf(packet, I_FRAME_SIZE);
-    llread(fd, packet);
-    checkControlPacket(END, packet);
-
     // Writing received data to file
-    fwrite(full_data, sizeof (unsigned char), 10968, file_fd1); 
+    fwrite(full_data, sizeof (unsigned char), file_size, file_fd1); 
     
     printf("\n--------ALL DATA RECEIVED--------\n\n");
     
