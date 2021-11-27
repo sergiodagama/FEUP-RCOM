@@ -20,19 +20,37 @@ int checkControlPacket(enum packet_id id, unsigned char* frame){
 unsigned long receiveStartPacket(int fd, unsigned char* name){
     unsigned char* packet = malloc(I_FRAME_SIZE);
 
-    unsigned long file_size = 10968;  //change to zero when all implemented
+    unsigned long file_size = 0;  //change to zero when all implemented
 
     while(TRUE){
         llread(fd, packet);
         
-        //printData(packet, I_FRAME_SIZE, 1);
+        //printData(packet, 25, 1);
 
         if(checkControlPacket(START, packet)){
             break;
         } 
     }
 
-    // Parsing start packet TODO
+    //Tamanho do file -> OK
+    int L1_idx = 6;
+    size_t size_of_sf = packet[L1_idx];
+
+    for (int i = 1; i <= size_of_sf; i++){
+        file_size += (packet[L1_idx+i]) << 8 * (size_of_sf-i);
+    }
+
+    //printf("FileSize = %ld\n", file_size);
+
+    //Nome do file -> OK
+    int L2_idx = L1_idx + size_of_sf + 2;
+    size_t size_of_fname = packet[L2_idx];
+
+    for (int j = 1; j <= size_of_fname; j++){
+        name[j-1] = packet[L2_idx+j];
+    }
+
+    //printf("name of file = %s\n", name);
 
     return file_size; 
 }
@@ -81,9 +99,9 @@ int main(int argc, char** argv){
 
     printf("\n--------RECEIVING DATA--------\n");
 
-    unsigned long file_size = 10968;
-    char file_name[1000];
-    char* name = malloc(100);
+    unsigned long file_size = 0;
+    unsigned char file_name[1000];
+    unsigned char* name = malloc(100);
      
     strcpy(file_name, "files/receive/");
 
@@ -92,7 +110,7 @@ int main(int argc, char** argv){
     
     file_size = receiveStartPacket(fd, name);
 
-    strcat(file_name, "pinguim.gif");  //change to start packet info
+    strcat(file_name, name);  //change to start packet info
 
     // Creating received file
     FILE *file_fd1;
