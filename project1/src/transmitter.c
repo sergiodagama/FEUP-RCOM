@@ -58,6 +58,9 @@ int sendDataPacket(int fd, FileInfo* file_info){
   while(s > 0){
     if(s < quant) quant = s;
 
+    printf("\t\tsize = %ld quant = %ld\n", s, quant);
+    //sleep(1);
+
     s -= quant;
 
     bytes_sent += llwrite(fd, dataChunk(file_info->data, index, quant), quant);
@@ -150,7 +153,7 @@ int main(int argc, char** argv){
     strcpy(file_name, "files/transfer/");
     strcat(file_name, argv[2]);
 
-    printf("FILE: %s", file_name);
+    printf("FILE: %s\n", file_name);
 
     if((file_fd = fopen(file_name, "rb")) == NULL){
       perror("Error opening file to send\n");

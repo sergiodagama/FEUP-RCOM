@@ -3,7 +3,7 @@
 int checkControlPacket(enum packet_id id, unsigned char* frame){
 
     if(id == START){
-        if(frame[4] == CP_START){
+        if(frame[4] == CP_START && frame[5] == 0){
             return TRUE;
         }
          
@@ -12,7 +12,7 @@ int checkControlPacket(enum packet_id id, unsigned char* frame){
         }
     }
     if(id == END){
-        if(frame[4] == CP_END) return TRUE;
+        if(frame[4] == CP_END && frame[5] == 0) return TRUE;
         else return FALSE;
     }
 }
@@ -115,14 +115,14 @@ int main(int argc, char** argv){
     // Creating received file
     FILE *file_fd1;
 
-    if((file_fd1 = fopen(file_name, "wb")) == NULL){
+    if((file_fd1 = fopen(file_name, "ab")) == NULL){
         perror("Error opening file to send\n");
         return ERROR;
     }
 
     // Receiving data packets
     unsigned char *packet = malloc(I_FRAME_SIZE);  //because it is the original frame data reaches here, so no need to double the memory
-    unsigned char* full_data = malloc(file_size);
+    //unsigned char* full_data = malloc(file_size);
 
     unsigned char* data = malloc(DATA_SIZE);
     int idx = 0;
@@ -144,16 +144,19 @@ int main(int argc, char** argv){
             data[i] = packet[i+4];
         }
 
-        for(int j = 0; j < DATA_SIZE; j++){
-            full_data[DATA_SIZE*idx + j] = data[j];
+        fwrite(data, sizeof (unsigned char), DATA_SIZE, file_fd1);
 
-        }
-        idx++;
+        // for(int j = 0; j < DATA_SIZE; j++){
+        //     full_data[DATA_SIZE*idx + j] = data[j];
+
+        // }
+        // idx++;
     }
 
     // Writing received data to file
-    fwrite(full_data, sizeof (unsigned char), file_size, file_fd1); 
-    
+    // fwrite(full_data, sizeof (unsigned char), file_size, file_fd1); 
+
+    fclose(file_fd1);
     printf("\n--------ALL DATA RECEIVED--------\n\n");
     
     printf("\n----------DISCONNECTING----------\n\n");
