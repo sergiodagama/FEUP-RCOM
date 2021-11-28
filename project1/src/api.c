@@ -331,7 +331,7 @@ int llread(int fd, unsigned char* buffer){
                 index++;
             }
         }
-        printf("Before Reverse Stuffing: \n");
+        //printf("Before Reverse Stuffing: \n");
        // printData(frame, I_FRAME_SIZE, READ);
 
         //reverse the byte stuffing
