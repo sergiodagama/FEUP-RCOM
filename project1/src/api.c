@@ -141,12 +141,18 @@ int llwrite(int fd, unsigned char* buffer, int length){
     frame[length + 4] = BCC2; //BCC2 TODO
     frame[length + 5] = FLAG; //FLAG
 
+    //printf("BEFORE STUFFIN\n");
+
     //printData(frame, I_FRAME_SIZE, WRITE);
+
+
 
     //frame stuffing
     unsigned char* stuffed_frame = malloc(I_FRAME_SIZE);
 
-    stuffed_frame = byteStuffing(length + 6, frame);
+    clean_buf(stuffed_frame, I_FRAME_SIZE);
+    
+    byteStuffing(length + 6, frame, stuffed_frame);
 
     //write frame
     signal(SIGALRM, atende);  // instala a rotina que atende interrupcao
@@ -168,9 +174,12 @@ int llwrite(int fd, unsigned char* buffer, int length){
         if((res = write(fd, stuffed_frame, I_FRAME_SIZE)) < 0){ 
             perror("    Error writing DATA\n");
         }
-        
-        //printData(stuffed_frame, I_FRAME_SIZE, WRITE);
 
+       printf("AFTER STUFFIN\n");
+        
+       printData(stuffed_frame, I_FRAME_SIZE, WRITE);
+
+      
         printf("\n");
         
         idx = 0;
@@ -216,12 +225,16 @@ int llwrite(int fd, unsigned char* buffer, int length){
         }
     }
 
+    free(stuffed_frame);
+
+
     if (STOP == TRUE)
     {
         printf(" - Received RR...\n");
         //só faz print se valor correto
         printData(buf_RR, SU_TRAMA_SIZE, READ);
     }
+
 
     printf("RES: %d\n", res);
     return res;
@@ -310,21 +323,28 @@ int llread(int fd, unsigned char* buffer){
 
     int res = 0, index = 0, stage = 0, STOP = FALSE;
 
+    
+    printf("A\n");
     unsigned char frame[I_FRAME_SIZE];
+    printf("B\n");
     unsigned char* original = malloc(I_FRAME_SIZE);
+    printf("C\n");
     unsigned char c;
+    printf("D\n");
+
+    
 
     while(!STOP){
         //reading frame
 
-        printf("\tIm on loop llread\n");
+        //printf("\tIm on loop llread\n");
 
         while (stage < 2) { 
-            printf("Before read inside llread %d\n", index);
+            //printf("Before read inside llread %d\n", index);
             res += read(fd, &c, 1);
-            printf("After read inside llread %d - read %c\n", index, c);
+            //printf("After read inside llread %d - read %c\n", index, c);
 
-            if(c == FLAG && stage == 0){  //Found final flag
+            if(c == FLAG && stage == 0){  //Found init flag
                 stage = 1;
             }
             else if(c==FLAG && stage == 1){
@@ -336,11 +356,11 @@ int llread(int fd, unsigned char* buffer){
                 index++;
             }
         }
-        //printf("Before Reverse Stuffing: \n");
-       // printData(frame, I_FRAME_SIZE, READ);
+        printf("Before Reverse Stuffing: \n");
+        printData(frame, I_FRAME_SIZE, READ);
 
         //reverse the byte stuffing
-        original = reverseByteStuffing(I_FRAME_SIZE, frame);
+        reverseByteStuffing(I_FRAME_SIZE, frame, original);
 
         //printf("After Reverse Stuffing: \n");
         //printData(original, I_FRAME_SIZE, READ);
@@ -352,6 +372,7 @@ int llread(int fd, unsigned char* buffer){
              for (int q = 0; q < I_FRAME_SIZE; q++) {
                 buffer[q] = original[q];
              }
+             free(original);
         }
         else{
             //sending REJ
@@ -366,6 +387,7 @@ int llread(int fd, unsigned char* buffer){
             }
 
             //clean frame and reset variables
+            
             clean_buf(frame, I_FRAME_SIZE);
             clean_buf(original, I_FRAME_SIZE);
             stage = 0;
@@ -373,6 +395,7 @@ int llread(int fd, unsigned char* buffer){
             index = 0;
         }
     }
+    printf("C\n");
      
     if (STOP == TRUE) { //se recebeu o I Frame corretamente, envia o RR ou REJ para o Transmitter  (MISSING REJ)
 

@@ -133,12 +133,13 @@ int main(int argc, char** argv){
         clean_buf(packet, I_FRAME_SIZE);
         clean_buf(data, DATA_SIZE);
 
-        printf("Before_read (%d)\n", idx);
+        //printf("Before_read (%d)\n", idx);
         llread(fd, packet);
-        printf("After_read (%d)\n", idx);
+        //printf("After_read (%d)\n", idx);
 
         if(checkControlPacket(END, packet) == TRUE){
             NOT_END = FALSE;
+            printf("CONTROL END BREAK\n");
             break;
         }
 
@@ -164,7 +165,9 @@ int main(int argc, char** argv){
     // Writing received data to file
     //fwrite(full_data, 1, file_size, file_fd1); 
 
-    fclose(file_fd1);
+    printf("RECEIVER A\n");
+    //fclose(file_fd1);
+    printf("RECEIVER B\n");
     printf("\n--------ALL DATA RECEIVED--------\n\n");
     
     printf("\n----------DISCONNECTING----------\n\n");
@@ -174,6 +177,7 @@ int main(int argc, char** argv){
         perror("Error: receiver llclose function call\n");
         return ERROR;
     }
+     printf("RECEIVER C\n");
 
     printf("\n----------DISCONNECTED-----------\n\n");
     

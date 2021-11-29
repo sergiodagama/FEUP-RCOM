@@ -187,6 +187,8 @@ int main(int argc, char** argv){
     //loop to send data
     sendDataPacket(fd, &file_info);
 
+    //sleep(120);
+
     //send end packet 
     sendControlPacket(fd, END, control_p);
 
