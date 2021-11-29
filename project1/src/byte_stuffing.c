@@ -41,6 +41,9 @@ unsigned char* byteStuffing(size_t size, unsigned char data[]){
 }
 
 unsigned char* reverseByteStuffing(size_t size, unsigned char stuffed[]){
+    printf("I'm on deStuff\n");
+
+
     if(size < 1){
         perror("Error: Size inferior to one");
         //return -1;
@@ -62,14 +65,20 @@ unsigned char* reverseByteStuffing(size_t size, unsigned char stuffed[]){
         if(stuffed[index] == ESCAPE && stuffed[index+1] == FLAG_XORED){
             original[i] = FLAG;
             index+=2;
+
+            printf("\tError here? 1 \n");
             //printf("Inside 1\n");
         }
         else if(stuffed[index] == ESCAPE && stuffed[index+1] == ESCAPE_XORED){
             original[i] = ESCAPE;
             index+=2;
             //printf("Inside 2\n");
+
+            printf("\tError here? 2 \n");
         }
         else if(stuffed[index+1] == FLAG){
+        printf("\tEndLOOP - Error here? 3 \n");
+
             original[i] = stuffed[index];
             original[i+1] = FLAG;
             END_FLAG = 1;
@@ -79,10 +88,13 @@ unsigned char* reverseByteStuffing(size_t size, unsigned char stuffed[]){
         else{
             original[i] = stuffed[index];
             index++;
+
+            printf("\t (%d) Error here? 4 \n", index);
             //printf("Inside 4\n");
         }
         i++;
     }
 
+    printf("DeStuff ok!\n");
     return original;
 }

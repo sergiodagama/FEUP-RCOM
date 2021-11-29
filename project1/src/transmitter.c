@@ -149,7 +149,7 @@ int main(int argc, char** argv){
     FILE *file_fd;
     FileInfo file_info;
 
-    char file_name[1000];
+    char *file_name = malloc(200);
     strcpy(file_name, "files/transfer/");
     strcat(file_name, argv[2]);
 
@@ -167,6 +167,8 @@ int main(int argc, char** argv){
 
     printf("\n----------SENDING DATA---------\n\n");
     
+    free(file_name);
+
     sleep(1);
 
     ControlPacket control_p = createControlPacket(&file_info);
@@ -187,6 +189,9 @@ int main(int argc, char** argv){
 
     //send end packet 
     sendControlPacket(fd, END, control_p);
+
+    fclose(file_fd);
+    free(control_p.packet);
 
     printf("\n----------ALL DATA SENT----------\n\n");
     

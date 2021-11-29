@@ -316,8 +316,13 @@ int llread(int fd, unsigned char* buffer){
 
     while(!STOP){
         //reading frame
+
+        printf("\tIm on loop llread\n");
+
         while (stage < 2) { 
+            printf("Before read inside llread %d\n", index);
             res += read(fd, &c, 1);
+            printf("After read inside llread %d - read %c\n", index, c);
 
             if(c == FLAG && stage == 0){  //Found final flag
                 stage = 1;

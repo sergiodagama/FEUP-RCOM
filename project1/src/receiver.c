@@ -133,18 +133,22 @@ int main(int argc, char** argv){
         clean_buf(packet, I_FRAME_SIZE);
         clean_buf(data, DATA_SIZE);
 
+        printf("Before_read (%d)\n", idx);
         llread(fd, packet);
+        printf("After_read (%d)\n", idx);
 
         if(checkControlPacket(END, packet) == TRUE){
             NOT_END = FALSE;
             break;
         }
 
-        // for(int i = 0; i < DATA_SIZE; i++){
-        //     data[i] = packet[i+4];
-        // }
+        for(int i = 0; i < DATA_SIZE; i++){
+            // printf("Before access it: %d\n", i);
+            data[i] = packet[i+4];
+            // printf("NOT SEGFAULT it: %d / %ld\n", i, DATA_SIZE);
+        }
 
-        memcpy(data, packet+4, DATA_SIZE);
+        // memcpy(data, packet+4, DATA_SIZE);
         fwrite(data, 1, DATA_SIZE, file_fd1);
 
         // for(int j = 0; j < DATA_SIZE; j++){
@@ -154,6 +158,7 @@ int main(int argc, char** argv){
 
         // memcpy(full_data+idx, data, DATA_SIZE);
         // idx += DATA_SIZE;
+        idx++;
     }
 
     // Writing received data to file
