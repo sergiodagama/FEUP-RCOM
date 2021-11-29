@@ -115,14 +115,14 @@ int main(int argc, char** argv){
     // Creating received file
     FILE *file_fd1;
 
-    if((file_fd1 = fopen(file_name, "ab")) == NULL){
+    if((file_fd1 = fopen(file_name, "w")) == NULL){
         perror("Error opening file to send\n");
         return ERROR;
     }
 
     // Receiving data packets
     unsigned char *packet = malloc(I_FRAME_SIZE);  //because it is the original frame data reaches here, so no need to double the memory
-    //unsigned char* full_data = malloc(file_size);
+    //void* full_data = malloc(file_size);
 
     unsigned char* data = malloc(DATA_SIZE);
     int idx = 0;
@@ -140,21 +140,24 @@ int main(int argc, char** argv){
             break;
         }
 
-        for(int i = 0; i < DATA_SIZE; i++){
-            data[i] = packet[i+4];
-        }
+        // for(int i = 0; i < DATA_SIZE; i++){
+        //     data[i] = packet[i+4];
+        // }
 
-        fwrite(data, sizeof (unsigned char), DATA_SIZE, file_fd1);
+        memcpy(data, packet+4, DATA_SIZE);
+        fwrite(data, 1, DATA_SIZE, file_fd1);
 
         // for(int j = 0; j < DATA_SIZE; j++){
         //     full_data[DATA_SIZE*idx + j] = data[j];
 
         // }
-        // idx++;
+
+        // memcpy(full_data+idx, data, DATA_SIZE);
+        // idx += DATA_SIZE;
     }
 
     // Writing received data to file
-    // fwrite(full_data, sizeof (unsigned char), file_size, file_fd1); 
+    //fwrite(full_data, 1, file_size, file_fd1); 
 
     fclose(file_fd1);
     printf("\n--------ALL DATA RECEIVED--------\n\n");
