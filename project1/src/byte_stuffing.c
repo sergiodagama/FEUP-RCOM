@@ -41,7 +41,7 @@ int byteStuffing(size_t size, unsigned char data[], unsigned char* stuffed){
 }
 
 int reverseByteStuffing(size_t size, unsigned char stuffed[],  unsigned char* original){
-    printf("I'm on deStuff\n");
+    //printf("I'm on deStuff\n");
 
 
     if(size < 1){
@@ -55,13 +55,11 @@ int reverseByteStuffing(size_t size, unsigned char stuffed[],  unsigned char* or
 
     int index = 1, i = 1;
 
-    printf("RA\n");
+    //printf("RA\n");
 
     clean_buf(original, size);
 
-    //unsigned char* original = malloc(size);
-
-    printf("RB\n");
+    //printf("RB\n");
 
     original[0] = FLAG;
 
@@ -77,7 +75,6 @@ int reverseByteStuffing(size_t size, unsigned char stuffed[],  unsigned char* or
             original[i] = FLAG;
             index+=2;
 
-            printf("\tError here? 1 \n");
             //printf("Inside 1\n");
         }
         else if(stuffed[index] == ESCAPE && stuffed[index+1] == ESCAPE_XORED){
@@ -85,10 +82,8 @@ int reverseByteStuffing(size_t size, unsigned char stuffed[],  unsigned char* or
             index+=2;
             //printf("Inside 2\n");
 
-            printf("\tError here? 2 \n");
         }
         else if(stuffed[index+1] == FLAG){
-        printf("\tEndLOOP - Error here? 3 \n");
 
             original[i] = stuffed[index];
             original[i+1] = FLAG;
@@ -100,7 +95,6 @@ int reverseByteStuffing(size_t size, unsigned char stuffed[],  unsigned char* or
             original[i] = stuffed[index];
             index++;
 
-            //printf("\t (%d) Error here? 4 \n", index);
             //printf("Inside 4\n");
         }
         i++;
@@ -110,7 +104,7 @@ int reverseByteStuffing(size_t size, unsigned char stuffed[],  unsigned char* or
     printf("VALUE index %d -> %x\n", i, original[i]);
     }*/
 
-    printf("DeStuff ok!\n");
+    //printf("DeStuff ok!\n");
     //return original;
     return 1;
 }

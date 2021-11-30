@@ -139,7 +139,7 @@ int main(int argc, char** argv){
 
         if(checkControlPacket(END, packet) == TRUE){
             NOT_END = FALSE;
-            printf("CONTROL END BREAK\n");
+            //printf("CONTROL END BREAK\n");
             break;
         }
 
@@ -165,9 +165,11 @@ int main(int argc, char** argv){
     // Writing received data to file
     //fwrite(full_data, 1, file_size, file_fd1); 
 
-    printf("RECEIVER A\n");
-    //fclose(file_fd1);
-    printf("RECEIVER B\n");
+    //printf("RECEIVER A\n");
+
+    //fica assim o close
+    close(file_fd1);
+    //printf("RECEIVER B\n");
     printf("\n--------ALL DATA RECEIVED--------\n\n");
     
     printf("\n----------DISCONNECTING----------\n\n");
@@ -177,7 +179,7 @@ int main(int argc, char** argv){
         perror("Error: receiver llclose function call\n");
         return ERROR;
     }
-     printf("RECEIVER C\n");
+     //("RECEIVER C\n");
 
     printf("\n----------DISCONNECTED-----------\n\n");
     

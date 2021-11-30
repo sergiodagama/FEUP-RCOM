@@ -58,8 +58,7 @@ int sendDataPacket(int fd, FileInfo* file_info){
   while(s > 0){
     if(s < quant) quant = s;
 
-    printf("\t\tsize = %ld quant = %ld\n", s, quant);
-    //sleep(1);
+    printf("\t\t\tsize = %ld quant = %ld\n", s, quant);
 
     s -= quant;
 
@@ -175,11 +174,11 @@ int main(int argc, char** argv){
 
     printf("-------Sending control packet------ \n");
     
-    printf("size: %d\n\n", control_p.size);
+    //printf("size: %d\n\n", control_p.size);
 
-    for(int c = 0; c < control_p.size; c++){
-      printf("%x \n", control_p.packet[c]);
-    }
+    // for(int c = 0; c < control_p.size; c++){
+    //   printf("%x \n", control_p.packet[c]);
+    // }
 
     //send start packet
     sendControlPacket(fd, START, control_p);
@@ -205,7 +204,6 @@ int main(int argc, char** argv){
       return ERROR;
     }
     
-
     printf("\n----------DISCONNECTED-----------\n\n");
 
     return 0;
