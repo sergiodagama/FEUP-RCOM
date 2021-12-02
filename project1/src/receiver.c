@@ -3,7 +3,7 @@
 int checkControlPacket(enum packet_id id, unsigned char* frame){
 
     if(id == START){
-        if(frame[4] == CP_START){
+        if(frame[4] == CP_START && frame[5] == 0){
             return TRUE;
         }
          
@@ -12,7 +12,7 @@ int checkControlPacket(enum packet_id id, unsigned char* frame){
         }
     }
     if(id == END){
-        if(frame[4] == CP_END) return TRUE;
+        if(frame[4] == CP_END && frame[5] == 0) return TRUE;
         else return FALSE;
     }
 }
@@ -20,19 +20,37 @@ int checkControlPacket(enum packet_id id, unsigned char* frame){
 unsigned long receiveStartPacket(int fd, unsigned char* name){
     unsigned char* packet = malloc(I_FRAME_SIZE);
 
-    unsigned long file_size = 10968;  //change to zero when all implemented
+    unsigned long file_size = 0;  //change to zero when all implemented
 
     while(TRUE){
         llread(fd, packet);
         
-        //printData(packet, I_FRAME_SIZE, 1);
+        //printData(packet, 25, 1);
 
         if(checkControlPacket(START, packet)){
             break;
         } 
     }
 
-    // Parsing start packet TODO
+    //Tamanho do file -> OK
+    int L1_idx = 6;
+    size_t size_of_sf = packet[L1_idx];
+
+    for (int i = 1; i <= size_of_sf; i++){
+        file_size += (packet[L1_idx+i]) << 8 * (size_of_sf-i);
+    }
+
+    //printf("FileSize = %ld\n", file_size);
+
+    //Nome do file -> OK
+    int L2_idx = L1_idx + size_of_sf + 2;
+    size_t size_of_fname = packet[L2_idx];
+
+    for (int j = 1; j <= size_of_fname; j++){
+        name[j-1] = packet[L2_idx+j];
+    }
+
+    //printf("name of file = %s\n", name);
 
     return file_size; 
 }
@@ -81,9 +99,9 @@ int main(int argc, char** argv){
 
     printf("\n--------RECEIVING DATA--------\n");
 
-    unsigned long file_size = 10968;
-    char file_name[1000];
-    char* name = malloc(100);
+    unsigned long file_size = 0;
+    unsigned char file_name[1000];
+    unsigned char* name = malloc(100);
      
     strcpy(file_name, "files/receive/");
 
@@ -92,56 +110,66 @@ int main(int argc, char** argv){
     
     file_size = receiveStartPacket(fd, name);
 
-    strcat(file_name, "pinguim.gif");  //change to start packet info
+    strcat(file_name, name);  //change to start packet info
 
     // Creating received file
     FILE *file_fd1;
 
-    if((file_fd1 = fopen(file_name, "wb")) == NULL){
+    if((file_fd1 = fopen(file_name, "w")) == NULL){
         perror("Error opening file to send\n");
         return ERROR;
     }
 
     // Receiving data packets
     unsigned char *packet = malloc(I_FRAME_SIZE);  //because it is the original frame data reaches here, so no need to double the memory
-    unsigned char* full_data = malloc(file_size);
+    //void* full_data = malloc(file_size);
 
     unsigned char* data = malloc(DATA_SIZE);
     int idx = 0;
     int NOT_END = TRUE;
     
     while(NOT_END){
-        if(idx > (file_size/DATA_SIZE)){
-            NOT_END = FALSE;
-            break;
-        }
 
         clean_buf(packet, I_FRAME_SIZE);
         clean_buf(data, DATA_SIZE);
 
+        //printf("Before_read (%d)\n", idx);
         llread(fd, packet);
+        //printf("After_read (%d)\n", idx);
 
-        //checkControlPacket();
+        if(checkControlPacket(END, packet) == TRUE){
+            NOT_END = FALSE;
+            //printf("CONTROL END BREAK\n");
+            break;
+        }
 
         for(int i = 0; i < DATA_SIZE; i++){
+            // printf("Before access it: %d\n", i);
             data[i] = packet[i+4];
+            // printf("NOT SEGFAULT it: %d / %ld\n", i, DATA_SIZE);
         }
 
-        for(int j = 0; j < DATA_SIZE; j++){
-            full_data[DATA_SIZE*idx + j] = data[j];
+        // memcpy(data, packet+4, DATA_SIZE);
+        fwrite(data, 1, DATA_SIZE, file_fd1);
 
-        }
+        // for(int j = 0; j < DATA_SIZE; j++){
+        //     full_data[DATA_SIZE*idx + j] = data[j];
+
+        // }
+
+        // memcpy(full_data+idx, data, DATA_SIZE);
+        // idx += DATA_SIZE;
         idx++;
     }
 
-    // Receiving end packet
-    clean_buf(packet, I_FRAME_SIZE);
-    llread(fd, packet);
-    checkControlPacket(END, packet);
-
     // Writing received data to file
-    fwrite(full_data, sizeof (unsigned char), 10968, file_fd1); 
-    
+    //fwrite(full_data, 1, file_size, file_fd1); 
+
+    //printf("RECEIVER A\n");
+
+    //fica assim o close
+    close(file_fd1);
+    //printf("RECEIVER B\n");
     printf("\n--------ALL DATA RECEIVED--------\n\n");
     
     printf("\n----------DISCONNECTING----------\n\n");
@@ -151,6 +179,7 @@ int main(int argc, char** argv){
         perror("Error: receiver llclose function call\n");
         return ERROR;
     }
+     //("RECEIVER C\n");
 
     printf("\n----------DISCONNECTED-----------\n\n");
     

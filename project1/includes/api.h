@@ -31,6 +31,9 @@ enum status {TRANSMITTER, RECEIVER};
 extern enum state state_receiver;
 extern enum state state_transmitter;
 
+
+//extern int connect_attempt;
+
 /**
  * @brief Used by the application layer to describe its use of the API
  * 

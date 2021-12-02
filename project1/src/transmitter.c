@@ -55,12 +55,30 @@ int sendDataPacket(int fd, FileInfo* file_info){
   int s = file_info->size;
   int bytes_sent = 0; 
 
+  int res;
+
+  unsigned char* data;
+
   while(s > 0){
+
     if(s < quant) quant = s;
 
-    s -= quant;
+    data = dataChunk(file_info->data, index, quant);
 
-    bytes_sent += llwrite(fd, dataChunk(file_info->data, index, quant), quant);
+    printf("\t\t\tsize = %ld quant = %ld\n", s, quant);
+
+    s -= quant;
+    
+    res = llwrite(fd, data, quant);
+
+    if(res == -1){
+      printf("Exiting sendDataPacket\n\n");
+      return bytes_sent;
+    }
+
+    free(data);
+
+    bytes_sent += res;
 
     index += quant;
   }
@@ -146,11 +164,11 @@ int main(int argc, char** argv){
     FILE *file_fd;
     FileInfo file_info;
 
-    char file_name[1000];
+    char *file_name = malloc(200);
     strcpy(file_name, "files/transfer/");
     strcat(file_name, argv[2]);
 
-    printf("FILE: %s", file_name);
+    printf("FILE: %s\n", file_name);
 
     if((file_fd = fopen(file_name, "rb")) == NULL){
       perror("Error opening file to send\n");
@@ -164,17 +182,19 @@ int main(int argc, char** argv){
 
     printf("\n----------SENDING DATA---------\n\n");
     
+    free(file_name);
+
     sleep(1);
 
     ControlPacket control_p = createControlPacket(&file_info);
 
     printf("-------Sending control packet------ \n");
     
-    printf("size: %d\n\n", control_p.size);
+    //printf("size: %d\n\n", control_p.size);
 
-    for(int c = 0; c < control_p.size; c++){
-      printf("%x \n", control_p.packet[c]);
-    }
+    // for(int c = 0; c < control_p.size; c++){
+    //   printf("%x \n", control_p.packet[c]);
+    // }
 
     //send start packet
     sendControlPacket(fd, START, control_p);
@@ -182,8 +202,13 @@ int main(int argc, char** argv){
     //loop to send data
     sendDataPacket(fd, &file_info);
 
+    //sleep(120);
+
     //send end packet 
     sendControlPacket(fd, END, control_p);
+
+    fclose(file_fd);
+    free(control_p.packet);
 
     printf("\n----------ALL DATA SENT----------\n\n");
     
@@ -195,7 +220,6 @@ int main(int argc, char** argv){
       return ERROR;
     }
     
-
     printf("\n----------DISCONNECTED-----------\n\n");
 
     return 0;

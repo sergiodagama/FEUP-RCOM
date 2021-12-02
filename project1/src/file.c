@@ -32,7 +32,7 @@ int fillInfo(FileInfo* fi, FILE *file, char *file_name){
 }
 
 unsigned char* dataChunk(unsigned char* data, int start_index, int quantity){
-  unsigned char* chunk = malloc(quantity);
+  unsigned char* chunk = (unsigned char*) malloc(quantity);
 
   for(int i = 0; i < quantity; i++){
     chunk[i] = data[start_index + i];

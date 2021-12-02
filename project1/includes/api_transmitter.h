@@ -15,7 +15,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <termios.h>
-#include "alarme.h"
+#include <signal.h>
+#include <errno.h>
 #include "macrosLD.h"
 
 struct termios oldtio,newtio;
@@ -42,5 +43,7 @@ int llopen_transmitter(char* port, int* fid);
  * @return negative value in case of error, positive otherwise
  */
 int llclose_transmitter(int fd);
+
+void atende();
 
 #endif

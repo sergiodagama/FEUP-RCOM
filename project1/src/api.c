@@ -1,5 +1,7 @@
 #include "../includes/api.h"
 
+extern int connect_attempt;
+
 int llopen(char* port, enum status stat, int* fid){
     if(stat == TRANSMITTER){
         if ((strcmp("/dev/ttyS0", port)!=0) && 
@@ -73,11 +75,11 @@ int checkRRByteRecieved(unsigned char* buf, int index, int Ns){
         return is_OK;
     }
     if(index == 3 && (buf[3] != (A_EE^C_RR_NS1)) && Ns == 0){
-        printf("HERE AEE NS1\n");
+        //printf("HERE AEE NS1\n");
         return is_OK;
     }
     if(index == 3 && (buf[3] != (A_EE^C_RR_NS0)) && Ns == 1){
-        printf("HERE AEE NS0\n");
+        //printf("HERE AEE NS0\n");
         return is_OK;
     }
 
@@ -119,7 +121,7 @@ int llwrite(int fd, unsigned char* buffer, int length){
     int res = 0;
 
     //frame creation
-    unsigned char frame[I_FRAME_SIZE];
+    unsigned char* frame = (unsigned char*) malloc(I_FRAME_SIZE);
 
     frame[0] = FLAG; //FLAG
     frame[1] = A_EE; //Address
@@ -141,17 +143,25 @@ int llwrite(int fd, unsigned char* buffer, int length){
     frame[length + 4] = BCC2; //BCC2 TODO
     frame[length + 5] = FLAG; //FLAG
 
+    //printf("BEFORE STUFFIN\n");
+
     //printData(frame, I_FRAME_SIZE, WRITE);
+
+
 
     //frame stuffing
     unsigned char* stuffed_frame = malloc(I_FRAME_SIZE);
 
-    stuffed_frame = byteStuffing(length + 6, frame);
+    clean_buf(stuffed_frame, I_FRAME_SIZE);
+    
+    byteStuffing(length + 6, frame, stuffed_frame);
+
+    free(frame);
 
     //write frame
-    signal(SIGALRM, atende);  // instala a rotina que atende interrupcao
-    siginterrupt(SIGALRM, 1); // quando o sinal SIGALRM é apanhado, provoca uma interrupção no read()
     int idx;
+    //signal(SIGALRM, atende);  // instala a rotina que atende interrupcao
+    //siginterrupt(SIGALRM, 1); // quando o sinal SIGALRM é apanhado, provoca uma interrupção no read()
 
     connect_attempt = 1;
   
@@ -165,21 +175,24 @@ int llwrite(int fd, unsigned char* buffer, int length){
 
         printf("Attempt %d\n - Sending DATA frame\n", connect_attempt);
         
+        
         if((res = write(fd, stuffed_frame, I_FRAME_SIZE)) < 0){ 
             perror("    Error writing DATA\n");
         }
-        
-        //printData(stuffed_frame, I_FRAME_SIZE, WRITE);
 
+       //printf("AFTER STUFFIN\n");
+        
+       //printData(stuffed_frame, I_FRAME_SIZE, WRITE);
+
+      
         printf("\n");
         
         idx = 0;
         alarm(ALARM_SECONDS);
-        flag = 0;
         int res_2 = 0;
         int good_rr = TRUE;
 
-        alarm(0); //Reset alarm
+        int timedout = 0;
 
         //wait for response RR /REJ
 
@@ -188,7 +201,20 @@ int llwrite(int fd, unsigned char* buffer, int length){
             if(idx == 0){
                 clean_buf(buf_RR, SU_TRAMA_SIZE);
             }
-            res_2 += read(fd, &buf_RR[idx], 1);
+            printf("before read\n");
+            if( (res = read(fd, &buf_RR[idx], 1)) < 0){
+                if (errno == EINTR){
+                    timedout = 1;
+                    printf("    Timed Out attempt: \n\n");
+                    break;
+                }
+                else{
+                    perror("    Read failed\n\n");
+
+                }
+            }
+
+            res_2+=res;
 
             if (checkRRByteRecieved(buf_RR, idx, Ns) == TRUE) //verifica se está a receber os bytes do SET corretos
                 idx++;
@@ -204,6 +230,7 @@ int llwrite(int fd, unsigned char* buffer, int length){
                 STOP = TRUE;
             }
         }
+        alarm(0);
 
         if(isRej(buf_RR[2], Ns) || !good_rr){  //if it is rej or not good rr go back and send again 
             printf(" - Received REJ...\n");
@@ -211,10 +238,13 @@ int llwrite(int fd, unsigned char* buffer, int length){
 
             connect_attempt = 1;
         }
-        else if (good_rr) {
+        else if (good_rr && timedout == 0) {
             SENDING = FALSE;
         }
     }
+
+    free(stuffed_frame);
+
 
     if (STOP == TRUE)
     {
@@ -223,7 +253,8 @@ int llwrite(int fd, unsigned char* buffer, int length){
         printData(buf_RR, SU_TRAMA_SIZE, READ);
     }
 
-    printf("RES: %d\n", res);
+
+    //printf("RES: %d\n", res);
     return res;
 }
 
@@ -234,71 +265,74 @@ int llwrite(int fd, unsigned char* buffer, int length){
 
 
 
-int checkDataFrame(unsigned char* frame, int Nr){
-    int is_OK = FALSE;
-
-    if (frame[0] != FLAG){
-        return is_OK;
-    }
-    if (frame[1] != A_EE){
-        return is_OK;
-    }
-
-    if (Nr){  //if Nr == 1 => frame[2] == 0
-        if(frame[2] != C_NS0){
-            return is_OK;
-        }
-    }
-    if (!Nr){
-        if(frame[2] != C_NS1){
-            return is_OK;
-        }
-    }
-    if (Nr){  //if Nr == 1 => frame[2] == 0
-        if(frame[3] != (A_EE^C_NS0)){
-            return is_OK;
-        }
-    }
-    if (!Nr){
-        if(frame[3] != (A_EE^C_NS1)){
-            return is_OK;
-        }
-    }
+int checkDataFrame(unsigned char* frame, int Nr, int size){
 
     //calculating BCC2
     unsigned short BCC2 = 0;
 
-    int i = 0; //zero, so that i+1 is equal to data size
-    int last_flag = 0;
-
-    for(int j = 0; j < I_FRAME_SIZE; j++){
-        if(frame[j] == FLAG) last_flag = j;
-    }
-
-    printf("LAST FLAG: %d\n", last_flag);
-
-    while(i+4 < last_flag-1){  
-        // printf("while-> frame %x\n", frame[4+i]);
-        BCC2 = BCC(frame[4+i], BCC2);
-        i++;
-    }
-    if(BCC2 != frame[last_flag-1]){
-        //printf("HEREEEE\n");
-        return is_OK;
-    }
     
-    if(FLAG != frame[last_flag]){
-        //printf("HEREEEE 22222222222\n");
-        return is_OK;
-    }
-    
-    is_OK = TRUE;
 
-    return is_OK;
+    //printf("LAST FLAG: %d\n", last_flag);
+
+    for(int c = 4; c < size-2; c++){
+        BCC2 = BCC(frame[c], BCC2);
+    }
+
+    
+    if(BCC2 != frame[size-2]){
+        printf("HEREEEE\n");
+        return FALSE;
+    }
+
+    return TRUE;
 }
 
 
+void handleIFrameState(char c, int* state, int Nr){
+    switch(*state){
+        case 0:{
+            if(c==FLAG) *state = 1;
+            break;
+        }
 
+        case 1:{
+            if(c==A_EE) *state = 2;
+            else *state = 0;
+            break;
+        }
+
+        case 2:{
+            if(Nr){
+                if(c==C_NS0) *state = 3;
+                else *state = 0;  
+            }
+            else{ 
+                if(c==C_NS1) *state = 3;
+                else *state = 0; 
+            } 
+            
+            break;
+        }
+
+        case 3:{
+            if(Nr){
+                if(c==A_EE^C_NS0) *state = 4;
+                else *state = 0; 
+            }
+            else{
+                if(c==A_EE^C_NS1) *state = 4;
+                else *state = 0; 
+            }
+            
+            break;
+        }
+
+        case 4:{
+            if(c==FLAG) *state = 5;
+            break;
+        }
+    }
+}
 
 int Nr = 0;
 
@@ -306,45 +340,61 @@ int llread(int fd, unsigned char* buffer){
 
     Nr = (Nr == 0) ? 1 : 0; // change to be depdent on Ns received! TODO
 
-    printf("\nNR: %d\n", Nr);
+    //printf("\nNR: %d\n", Nr);
 
-    int res = 0, index = 0, stage = 0, STOP = FALSE;
+    int res = 0, index = 0; //<- numero de bytes,
+    int stage = 0, STOP = FALSE;
 
-    unsigned char frame[I_FRAME_SIZE];
-    unsigned char* original = malloc(I_FRAME_SIZE);
+    
+    //printf("A\n");
+    unsigned char* frame; //= malloc(I_FRAME_SIZE);
+    //printf("B\n");
+    unsigned char* original; // = malloc(I_FRAME_SIZE);
+    //printf("C\n");
     unsigned char c;
+    //printf("D\n");
+    frame = malloc(I_FRAME_SIZE);
+    original = malloc(I_FRAME_SIZE);
+    
 
     while(!STOP){
         //reading frame
-        while (stage < 2) { 
+    
+
+        //printf("\tIm on loop llread\n");
+
+        while (stage <5) { 
+    
+            //printf("Before read inside llread %d\n", index);
             res += read(fd, &c, 1);
+            //printf("After read inside llread %d - read %c\n", index, c);
 
-            if(c == FLAG && stage == 0){  //Found final flag
-                stage = 1;
-            }
-            else if(c==FLAG && stage == 1){
-                stage = 2;
-            }
+            frame[index] = c;
+            
 
-            if(stage > 0){
-                frame[index] = c;
-                index++;
-            }
+            handleIFrameState(frame[index], &stage, Nr);
+
+            if(stage != 0) index++;
+            else index = 0;
+
         }
-        printf("Before Reverse Stuffing: \n");
-       // printData(frame, I_FRAME_SIZE, READ);
+        //printf("Before Reverse Stuffing: \n");
+        //printData(frame, I_FRAME_SIZE, READ);
 
         //reverse the byte stuffing
-        original = reverseByteStuffing(I_FRAME_SIZE, frame);
+        reverseByteStuffing(&index, frame, original);
+        printf("Before Free Frame\n\n");
+        //free(frame);
+        printf("After Free Frame\n\n");
 
         //printf("After Reverse Stuffing: \n");
         //printData(original, I_FRAME_SIZE, READ);
 
         //checking read frame
-        if (checkDataFrame(original, Nr)){  
+        if (checkDataFrame(original, Nr, index)){  
             STOP = TRUE;
             printf("\n DATA ALL OK - bytes read: %d\n", res);
-             for (int q = 0; q < I_FRAME_SIZE; q++) {
+             for (int q = 0; q < index; q++) {
                 buffer[q] = original[q];
              }
         }
@@ -361,13 +411,20 @@ int llread(int fd, unsigned char* buffer){
             }
 
             //clean frame and reset variables
-            clean_buf(frame, I_FRAME_SIZE);
-            clean_buf(original, I_FRAME_SIZE);
+            
+            //sleep(1);
+
+            // clean_buf(frame, I_FRAME_SIZE);
+            // clean_buf(original, I_FRAME_SIZE);
             stage = 0;
             res = 0;
             index = 0;
         }
+        //free(original);
     }
+    free(original);
+    free(frame);
+    //printf("C\n");
      
     if (STOP == TRUE) { //se recebeu o I Frame corretamente, envia o RR ou REJ para o Transmitter  (MISSING REJ)
 

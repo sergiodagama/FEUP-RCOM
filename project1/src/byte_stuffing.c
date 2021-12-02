@@ -1,6 +1,6 @@
 #include "../includes/byte_stuffing.h"
 
-unsigned char* byteStuffing(size_t size, unsigned char data[]){
+int byteStuffing(size_t size, unsigned char data[], unsigned char* stuffed){
     if(size < 1){
         perror("Error: Size inferior to one");
         //return -1;
@@ -11,7 +11,7 @@ unsigned char* byteStuffing(size_t size, unsigned char data[]){
     }
     int index = 1;
 
-    unsigned char* stuffed = malloc(size*2);
+   
 
     stuffed[0] = FLAG;
 
@@ -37,11 +37,14 @@ unsigned char* byteStuffing(size_t size, unsigned char data[]){
             stuffed[i] = 0;
         }
     }
-    return stuffed;
+    return 1;
 }
 
-unsigned char* reverseByteStuffing(size_t size, unsigned char stuffed[]){
-    if(size < 1){
+int reverseByteStuffing(int *size, unsigned char stuffed[],  unsigned char* original){
+    //printf("I'm on deStuff\n");
+
+
+    if(*size < 1){
         perror("Error: Size inferior to one");
         //return -1;
     }
@@ -52,37 +55,56 @@ unsigned char* reverseByteStuffing(size_t size, unsigned char stuffed[]){
 
     int index = 1, i = 1;
 
-    unsigned char* original = malloc(size);
+    //printf("RA\n");
+
+    //clean_buf(original, size);
+
+    //printf("RB\n");
 
     original[0] = FLAG;
 
     int END_FLAG = 0;
 
     while(!END_FLAG){
+        if(i == 450){
+            break;
+        }
+        
+
         if(stuffed[index] == ESCAPE && stuffed[index+1] == FLAG_XORED){
             original[i] = FLAG;
             index+=2;
+
             //printf("Inside 1\n");
         }
         else if(stuffed[index] == ESCAPE && stuffed[index+1] == ESCAPE_XORED){
             original[i] = ESCAPE;
             index+=2;
             //printf("Inside 2\n");
+
         }
-        else if(stuffed[index+1] == FLAG){
+        else if(stuffed[index] == FLAG){
+
             original[i] = stuffed[index];
-            original[i+1] = FLAG;
             END_FLAG = 1;
-            break;
             //printf("Inside 3\n");
         }
         else{
             original[i] = stuffed[index];
             index++;
+
             //printf("Inside 4\n");
         }
         i++;
     }
 
-    return original;
+    *size=i;
+    return 1;
+    /*for(int i = 0; i < size;i++){
+    printf("VALUE index %d -> %x\n", i, original[i]);
+    }*/
+
+    //printf("DeStuff ok!\n");
+    //return original;
+    
 }

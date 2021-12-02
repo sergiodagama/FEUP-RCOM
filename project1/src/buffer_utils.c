@@ -26,6 +26,6 @@ void printData(unsigned char *trama, int size, int read){
     }
 }
 
-void clean_buf(unsigned char *buf, int size){
-  memset(buf, '/0', size);
+void clean_buf(void *buf, int size){
+  memset(buf, 0, size);
 }

@@ -127,7 +127,7 @@ int llopen_receiver(char * port, int* fid){
     printf(" - Receiving SET...\n");
     while (!STOP)
     { /* loop for input */
-
+      
       if((idx == 0) && (SET_received == 1)){
         clean_buf(buf_R,MAX_SIZE);
       }
@@ -234,9 +234,10 @@ int llclose_receiver(int fd){
   //só faz print se valor correto
   printData(buf_R, SU_TRAMA_SIZE, READ);
 
-  //     sleep(1);
   
   printf("    Receiver Disconnecting, Adios!...\n");
+
+  sleep(2);
 
   if(tcsetattr(fd, TCSANOW, &oldtio) == -1) {
     perror("tcsetattr");
