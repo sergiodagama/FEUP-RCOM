@@ -189,19 +189,21 @@ int llwrite(int fd, unsigned char* buffer, int length){
         
         idx = 0;
         alarm(ALARM_SECONDS);
-        int res_2 = 0;
         int good_rr = TRUE;
 
         int timedout = 0;
+        
+        
 
         //wait for response RR /REJ
 
         while (!STOP)
         { /* loop for input */
+            //sleep(1);
             if(idx == 0){
                 clean_buf(buf_RR, SU_TRAMA_SIZE);
             }
-            printf("before read\n");
+            //printf("before read\n");
             if( (res = read(fd, &buf_RR[idx], 1)) < 0){
                 if (errno == EINTR){
                     timedout = 1;
@@ -213,26 +215,33 @@ int llwrite(int fd, unsigned char* buffer, int length){
 
                 }
             }
+            
+            if(idx == 2){
+             if (isRej(buf_RR[2], Ns)){ good_rr == FALSE; idx++;}
+             else if (checkRRByteRecieved(buf_RR, idx, Ns)) {idx++;}
+             else idx = 0;
+            }
 
-            res_2+=res;
-
-            if (checkRRByteRecieved(buf_RR, idx, Ns) == TRUE) //verifica se está a receber os bytes do SET corretos
-                idx++;
-            else{
-                good_rr = FALSE;
-                res_2=0;
+            else if (checkRRByteRecieved(buf_RR, idx, Ns)){ //verifica se está a receber os bytes do SET corretos
                 idx++;
                 //idx = 0; //nao seria voltar a enviar data? inves de recber RR again
-                printf("RR byte (%d) not good :(\n", idx);
+                //printf("RR byte (%d) not good :(\n", idx);
             }
+            else
+                idx = 0;
+
 
             if (idx == 5){ 
                 STOP = TRUE;
             }
         }
         alarm(0);
-
-        if(isRej(buf_RR[2], Ns) || !good_rr){  //if it is rej or not good rr go back and send again 
+        
+        if(timedout == 1){
+            printf("Timedout while reading RR/REJ \n");
+        }
+        
+        else if(isRej(buf_RR[2], Ns) || !good_rr){  //if it is rej or not good rr go back and send again 
             printf(" - Received REJ...\n");
             printData(buf_RR, SU_TRAMA_SIZE, READ);
 
@@ -414,8 +423,8 @@ int llread(int fd, unsigned char* buffer){
             
             //sleep(1);
 
-            // clean_buf(frame, I_FRAME_SIZE);
-            // clean_buf(original, I_FRAME_SIZE);
+            clean_buf(frame, I_FRAME_SIZE);
+            clean_buf(original, I_FRAME_SIZE);
             stage = 0;
             res = 0;
             index = 0;
