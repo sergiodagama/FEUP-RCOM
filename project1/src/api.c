@@ -91,15 +91,26 @@ int checkRRByteRecieved(unsigned char* buf, int index, int Ns){
 }
 
 
-int isRej(unsigned char c, int Ns){
-    if(Ns == 0){
-        return c == C_REJ_NS1;
+
+int isRej(unsigned char c, int index,  int Ns){
+    if(index == 2){    
+        if(Ns == 0){
+            return c == C_REJ_NS0;
+        }
+        if(Ns == 1){
+            return c == C_REJ_NS1;
+        }
     }
-    if(Ns == 1){
-        return c == C_REJ_NS0;
+    else if (index == 3) {
+        if(Ns == 0){
+            return c == 0x02;
+        }
+        if(Ns == 1){
+            return c == 0x82;
+        }
+        ////return c == 0x02 || c == 0x82;
     }
 }
-
 
 
 int Ns = 1;
@@ -200,14 +211,15 @@ int llwrite(int fd, unsigned char* buffer, int length){
         while (!STOP)
         { /* loop for input */
             //sleep(1);
-            if(idx == 0){
-                clean_buf(buf_RR, SU_TRAMA_SIZE);
-            }
+         
             //printf("before read\n");
             if( (res = read(fd, &buf_RR[idx], 1)) < 0){
                 if (errno == EINTR){
                     timedout = 1;
                     printf("    Timed Out attempt: \n\n");
+
+                    printf(" idx : %d\n", idx);
+                    printData(buf_RR, SU_TRAMA_SIZE, READ);
                     break;
                 }
                 else{
@@ -216,8 +228,9 @@ int llwrite(int fd, unsigned char* buffer, int length){
                 }
             }
             
-            if(idx == 2){
-             if (isRej(buf_RR[2], Ns)){ good_rr == FALSE; idx++;}
+            if(idx == 2 || idx == 3){
+            printf("idx(isRej) = %d\n", idx);
+             if (isRej(buf_RR[idx],idx, Ns)){ good_rr == FALSE; idx++;}
              else if (checkRRByteRecieved(buf_RR, idx, Ns)) {idx++;}
              else idx = 0;
             }
@@ -241,15 +254,19 @@ int llwrite(int fd, unsigned char* buffer, int length){
             printf("Timedout while reading RR/REJ \n");
         }
         
-        else if(isRej(buf_RR[2], Ns) || !good_rr){  //if it is rej or not good rr go back and send again 
+        else if(!good_rr){  //if it is rej or not good rr go back and send again 
             printf(" - Received REJ...\n");
             printData(buf_RR, SU_TRAMA_SIZE, READ);
-
+            
+        
             connect_attempt = 1;
         }
         else if (good_rr && timedout == 0) {
             SENDING = FALSE;
+  
         }
+
+        clean_buf(buf_RR, 5);
     }
 
     free(stuffed_frame);
@@ -276,8 +293,39 @@ int llwrite(int fd, unsigned char* buffer, int length){
 
 int checkDataFrame(unsigned char* frame, int Nr, int size){
 
+    if(size < 100){
+        return TRUE;
+    }
+
     //calculating BCC2
+    printf("%d \n %x \n %x \n", Nr, frame[2], frame[3]);
     unsigned short BCC2 = 0;
+
+    if(Nr){
+        if(frame[2] != C_NS0){
+            printf("kkkk1");
+            return FALSE;
+        }
+    }
+    else{
+        if(frame[2] != C_NS1){
+            printf("kkkk2");
+            return FALSE;
+        }
+    }
+
+    if(Nr){
+        if(frame[3] != A_EE^C_NS0){
+            printf("kkkk3");
+            return FALSE;
+        }
+    }
+    else{
+        if(frame[3] != 0x43){
+            printf("kkkk4");
+            return FALSE;
+        }
+    }
 
     
 
@@ -311,27 +359,19 @@ void handleIFrameState(char c, int* state, int Nr){
         }
 
         case 2:{
-            if(Nr){
-                if(c==C_NS0) *state = 3;
-                else *state = 0;  
-            }
-            else{ 
-                if(c==C_NS1) *state = 3;
-                else *state = 0; 
-            } 
+            if(c==C_NS0 || c==C_NS1) *state = 3;
+            else *state = 0;  
+            
+            
             
             break;
         }
 
         case 3:{
-            if(Nr){
-                if(c==A_EE^C_NS0) *state = 4;
-                else *state = 0; 
-            }
-            else{
-                if(c==A_EE^C_NS1) *state = 4;
-                else *state = 0; 
-            }
+            
+            if(c==A_EE^C_NS0 || c==A_EE^C_NS1) *state = 4;
+            else *state = 0; 
+            
             
             break;
         }
@@ -391,6 +431,7 @@ int llread(int fd, unsigned char* buffer){
         //printData(frame, I_FRAME_SIZE, READ);
 
         //reverse the byte stuffing
+
         reverseByteStuffing(&index, frame, original);
         printf("Before Free Frame\n\n");
         //free(frame);
