@@ -1,5 +1,4 @@
 #include "../includes/api_transmitter.h"
-// #include "../includes/macrosLD.h"
 
 int connect_attempt =1;
 
@@ -9,12 +8,59 @@ unsigned char buf_E[MAX_SIZE];
 
 enum state state_transmitter;
 
-void atende()                   // atende alarme
+void atende()                  
 {
-   printf(" - Alarme ring ring\n");
    connect_attempt++;
 }
 
+int checkRRByteRecieved(unsigned char* buf, int index, int Ns){
+    int is_OK = FALSE;
+
+    if ((index == 0 && buf[0] != FLAG) || (index == 4 && buf[4] != FLAG)){
+        return is_OK;        
+    }
+    if(index == 1 && buf[1] != A_EE){
+        return is_OK;
+    }
+    if(index == 2 && buf[2] != C_RR_NS1 && Ns == 0){
+        return is_OK;
+    }
+    if(index == 2 && buf[2] != C_RR_NS0 && Ns == 1){
+        return is_OK;
+    }
+    if(index == 3 && (buf[3] != (A_EE^C_RR_NS1)) && Ns == 0){
+        
+        return is_OK;
+    }
+    if(index == 3 && (buf[3] != (A_EE^C_RR_NS0)) && Ns == 1){
+        
+        return is_OK;
+    }
+
+    is_OK = TRUE;
+    return is_OK;
+
+}
+
+
+int isRej(unsigned char c, int index,  int Ns){
+    if(index == 2){    
+        if(Ns == 0){
+            return c == C_REJ_NS0;
+        }
+        if(Ns == 1){
+            return c == C_REJ_NS1;
+        }
+    }
+    else if (index == 3) {
+        if(Ns == 0){
+            return c == 0x02;
+        }
+        if(Ns == 1){
+            return c == 0x82;
+        }
+    }
+}
 
 int checkUAByteRecieved(unsigned char byte_recieved, int idx){
   int is_OK = FALSE;
@@ -59,10 +105,6 @@ int checkDiscRByteRecieved(unsigned char byte_recieved, int idx){
 int llopen_transmitter(char* port, int *fid){
   int fd, c, res;
 
-  /*
-    Open serial port device for reading and writing and not as controlling tty
-    because we don't want to get killed if linenoise sends CTRL-C.
-  */
 
   fd = open(port, O_RDWR | O_NOCTTY);
 
@@ -73,7 +115,7 @@ int llopen_transmitter(char* port, int *fid){
     return ERROR; 
   }
 
-  if (tcgetattr(fd, &oldtio) == -1) { /* save current port settings */
+  if (tcgetattr(fd, &oldtio) == -1) {
     perror("tcgetattr");
     return ERROR;
   }
@@ -102,10 +144,8 @@ int llopen_transmitter(char* port, int *fid){
 
   printf("New termios structure set\n");
 
-  //port file open starting connection procedure
-
-  signal(SIGALRM, atende);  // instala a rotina que atende interrupcao
-  siginterrupt(SIGALRM, 1); // quando o sinal SIGALRM é apanhado, provoca uma interrupção no read()
+  signal(SIGALRM, atende);
+  siginterrupt(SIGALRM, 1); 
   
   int idx;
 
@@ -113,7 +153,6 @@ int llopen_transmitter(char* port, int *fid){
 
   state_transmitter = CONNECTING;
 
-  //while - open connection
   while(state_transmitter == CONNECTING){
 
     if (connect_attempt > MAX_ATTEMPS){
@@ -129,14 +168,13 @@ int llopen_transmitter(char* port, int *fid){
 
     printf("\n");
   
-    //Rececao do UA
+    
     idx = 0;
     alarm(ALARM_SECONDS);
 
     printf(" - Receiving UA...\n");
-    while (!STOP) {       /* loop for input */
+    while (!STOP) {  
 
-      //printf("before read\n");
       if ((res = read(fd, &buf_E[idx], 1)) < 0){
         if (errno == EINTR){
           printf("    Timed Out\n\n");
@@ -147,11 +185,9 @@ int llopen_transmitter(char* port, int *fid){
         }
       }
 
-      //Check se os valores são iguais aos expected -> se sim continua normalmente se não vai mudar o idx para repetir leitura
-
-      if(checkUAByteRecieved(buf_E[idx], idx) == TRUE) //Depois a state machine vai ligar aqui
+      if(checkUAByteRecieved(buf_E[idx], idx) == TRUE) 
         idx++;
-      else  idx = 0; //volta ao início?
+      else  idx = 0; 
       
       if (idx == 5){
         STOP = TRUE;
@@ -159,10 +195,9 @@ int llopen_transmitter(char* port, int *fid){
       }
     }
 
-    alarm(0); //Reset alarm
+    alarm(0); 
 
     if (STOP == TRUE){
-        //só faz print se valor correto
         printData(buf_E, SU_TRAMA_SIZE, READ);
     }
   }
@@ -181,9 +216,8 @@ int llclose_transmitter(int fd){
 
     int res, idx=0;
 
-    //starting to disconnect
 
-    state_transmitter=DISCONNECTING; //temporário!! serve para o codigo entrar no while
+    state_transmitter=DISCONNECTING; 
 
     while(state_transmitter==DISCONNECTING){
 
@@ -198,7 +232,6 @@ int llclose_transmitter(int fd){
         perror("    Error writing DISC\n");
       }
 
-      //receive DISC
       printf(" - Receiving DISC_R...\n");
         
       idx = 0;
@@ -215,7 +248,6 @@ int llclose_transmitter(int fd){
           }
         }
 
-        //Check se os valores são iguais aos expected -> se sim continua normalmente se não vai mudar o idx para repetir leitura
         if(checkDiscRByteRecieved(buf_E[idx], idx) == TRUE) 
           idx++;
         else 
@@ -226,13 +258,13 @@ int llclose_transmitter(int fd){
           state_transmitter = FINISHED;
         }
       }
-      alarm(0);//TODO timeout
+      alarm(0);
 
     }
   
-    printData(buf_E, SU_TRAMA_SIZE, READ);//só faz print se valor correto
+    printData(buf_E, SU_TRAMA_SIZE, READ);
 
-      //send UA
+     
     printf(" - Sending UA_E...\n");
 
     if (writeData(fd, UA_E, SU_TRAMA_SIZE) < 0)

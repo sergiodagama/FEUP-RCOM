@@ -16,6 +16,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <termios.h>
+
 #include "api_receiver.h"
 #include "api_transmitter.h"
 #include "byte_stuffing.h"
@@ -32,8 +33,6 @@ extern enum state state_receiver;
 extern enum state state_transmitter;
 
 
-//extern int connect_attempt;
-
 /**
  * @brief Used by the application layer to describe its use of the API
  * 
@@ -43,16 +42,6 @@ typedef struct ApplicationLayer {
     enum status status; // TRANSMITTER or RECEIVER
 } ApplicationLayer;
 
-/*
-typedef struct LinkLayer {
-    char port[20]; //port file name
-    int baudRate;  //transmission speed
-    unsigned int sequenceNumber; //sequence number of the frame
-    unsigned int timeout; //timeout value in seconds
-    unsigned int numTransmissions; // attempts number in case of faillure
-    char frame[MAX_SIZE];
-} LinkLayer;
-*/
 
 /**
  * @brief Opens a connection
@@ -69,7 +58,6 @@ int llopen(char* port, enum status stat, int* fid);
  * 
  * @param fd file descriptor of connection port file
  * @param buffer characters array to be received
- * @param Nr current Nr
  * @return number of characters read, negative value in case of error
  */
 int llread(int fd, unsigned char* buffer);

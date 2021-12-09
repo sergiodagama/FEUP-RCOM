@@ -5,7 +5,7 @@
 
 /**
  * @file byte_stuffing.h
- * @brief Bytte Stuffing Module
+ * @brief Byte Stuffing Module
  * @version 0.1
  * 
  */
@@ -20,7 +20,9 @@
  * 
  * @param size the size of the data array
  * @param data the data array to be stuffed
- * @return stuffed data array with double of the size parameter
+ * @param stuffed where stuffed frame will be stored
+ * 
+ * @return 1 if successful, -1 otherwise
  */
 int byteStuffing(size_t size, unsigned char data[], unsigned char* stuffed);
 
@@ -29,7 +31,9 @@ int byteStuffing(size_t size, unsigned char data[], unsigned char* stuffed);
  * 
  * @param size the size of the stuffed data array
  * @param stuffed the stuffed data array
- * @return array with half the size of the value passed
+ * @param original where the destuffed frame will be stored
+ * 
+ * @return 1 if successful, -1 otherwise
  */
 int reverseByteStuffing(int *size, unsigned char stuffed[], unsigned char* original);
 

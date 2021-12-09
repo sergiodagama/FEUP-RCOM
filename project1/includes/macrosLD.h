@@ -35,7 +35,7 @@
 #define ALARM_SECONDS 3
 #define MAX_SIZE 200
 #define SU_TRAMA_SIZE 5
-#define I_FRAME_SIZE 410  //1 flag + 3 bytes header + 100 data + 1 bytes header + 1 flag  = (tirando as flags) 104 => 104*2 = 208 + 2 = 210
+#define I_FRAME_SIZE 410  //1 flag + 3 bytes header + 200 data + 1 bytes header + 1 flag  = (tirando as flags) 104 => 104*2 = 208 + 2 = 210
 #define DATA_SIZE 200
 
 //Defines of Message content

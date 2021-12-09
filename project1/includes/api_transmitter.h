@@ -21,11 +21,52 @@
 
 struct termios oldtio,newtio;
 
-// unsigned char SET[SU_TRAMA_SIZE] = {FLAG, A_EE, C_SET, BCC(A_EE, C_SET), FLAG};
-// unsigned char UA_E[SU_TRAMA_SIZE] = {FLAG, A_EE, C_UA, BCC(A_EE, C_DISC), FLAG};
-// unsigned char UA_R[SU_TRAMA_SIZE] = {FLAG, A_ER, C_UA, BCC(A_ER, C_UA), FLAG}; 
-// unsigned char DISC_E[SU_TRAMA_SIZE] = {FLAG, A_EE, C_DISC, BCC(A_EE, C_DISC), FLAG};
-// unsigned char DISC_R[SU_TRAMA_SIZE] = {FLAG, A_ER, C_DISC, BCC(A_ER, C_DISC), FLAG};
+/**
+ * @brief SIGALRM handler
+ */
+void atende();
+
+/**
+ * @brief Verifies if the buf's bytes are equivalent to a RR 
+ * 
+ * @param buf buf to be verified
+ * @param index index of the byte to be verified
+ * @param Ns sequence number
+ * 
+ * @return 0 in case of error, 1 otherwise
+ */
+int checkRRByteRecieved(unsigned char* buf, int index, int Ns);
+
+/**
+ * @brief Verifies if the buf's bytes are equivalent to a REJ 
+ * 
+ * @param c byte to be verified
+ * @param index index of the byte to be verified
+ * @param Ns sequence number
+ * 
+ * @return 0 in case of error, 1 otherwise
+ */
+int isRej(unsigned char c, int index,  int Ns);
+
+/**
+ * @brief Verifies if the buf's bytes are equivalent to a UA sent by the receiver
+ * 
+ * @param byte_recieved byte to be verified
+ * @param idx index of the byte to be verified
+ * 
+ * @return 0 in case of error, 1 otherwise
+ */
+int checkUAByteRecieved(unsigned char byte_recieved, int idx);
+
+/**
+ * @brief Verifies if the buf's bytes are equivalent to a Disc sent by the receiver
+ * 
+ * @param byte_recieved byte to be verified
+ * @param idx index of the byte to be verified
+ * 
+ * @return 0 in case of error, 1 otherwise
+ */
+int checkDiscRByteRecieved(unsigned char byte_recieved, int idx);
 
 /**
  * @brief Opens connection on the transmitter side
@@ -43,7 +84,5 @@ int llopen_transmitter(char* port, int* fid);
  * @return negative value in case of error, positive otherwise
  */
 int llclose_transmitter(int fd);
-
-void atende();
 
 #endif

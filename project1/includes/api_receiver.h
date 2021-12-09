@@ -19,6 +19,55 @@
 struct termios oldtio, newtio;
 
 /**
+ * @brief Verifies if the buf's bytes are equivalent to a SET
+ * 
+ * @param byte_recieved byte to be verified
+ * @param idx index of the byte to be verified
+ * 
+ * @return 0 in case of error, 1 otherwise
+ */
+int checkSETByteRecieved(unsigned char byte_recieved, int idx);
+
+/**
+ * @brief Verifies if the buf's bytes are equivalent to a DISC sent by the transmitter
+ * 
+ * @param byte_recieved byte to be verified
+ * @param idx index of the byte to be verified
+ * 
+ * @return 0 in case of error, 1 otherwise
+ */
+int checkDiscEByteRecieved(unsigned char byte_recieved, int idx);
+
+/**
+ * @brief Verifies if the buf's bytes are equivalent to a UA sent by the transmitter
+ * 
+ * @param byte_recieved byte to be verified
+ * @param idx index of the byte to be verified
+ * 
+ * @return 0 in case of error, 1 otherwise
+ */
+int checkUA_E_ByteRecieved(unsigned char byte_recieved, int idx);
+
+/**
+ * @brief Verifies if the data frame's header and tail are correct
+ * 
+ * @param frame frame to be verified
+ * @param Nr sequence number
+ * @param size frame size
+ * 
+ * @return 0 in case of error, 1 otherwise
+ */
+int checkDataFrame(unsigned char* frame, int Nr, int size);
+
+/**
+ * @brief Updates the llread state machine
+ * 
+ * @param c last byte read
+ * @param state current state
+ */
+void handleIFrameState(char c, int* state);
+
+/**
  * @brief Opens connection on the receiver side
  * 
  * @param port the name of the port file

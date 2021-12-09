@@ -9,7 +9,7 @@ CFLAGS=-g -Wall
 TRANSMITTER_O_FILES=$(ODIR)/transmitter.o
 RECEIVER_O_FILES   =$(ODIR)/receiver.o
 
-O_FILES= $(ODIR)/api_receiver.o $(ODIR)/api_transmitter.o $(ODIR)/api.o $(ODIR)/buffer_utils.o $(ODIR)/byte_stuffing.o $(ODIR)/file.o 
+O_FILES= $(ODIR)/app_receiver.o $(ODIR)/app_transmitter.o $(ODIR)/api_receiver.o $(ODIR)/api_transmitter.o $(ODIR)/api.o $(ODIR)/buffer_utils.o $(ODIR)/byte_stuffing.o $(ODIR)/file.o 
 
 all: transmitter receiver
 

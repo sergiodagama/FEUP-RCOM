@@ -70,6 +70,93 @@ int checkUA_E_ByteRecieved(unsigned char byte_recieved, int idx){
   return is_OK;
 }
 
+
+int checkDataFrame(unsigned char* frame, int Nr, int size){
+
+    if(size < 100){
+        return TRUE;
+    }
+
+    
+    printf("%d \n %x \n %x \n", Nr, frame[2], frame[3]);
+    unsigned short BCC2 = 0;
+
+    if(Nr){
+        if(frame[2] != C_NS0){
+            return FALSE;
+        }
+    }
+    else{
+        if(frame[2] != C_NS1){
+            return FALSE;
+        }
+    }
+
+    if(Nr){
+        if(frame[3] != A_EE^C_NS0){
+            return FALSE;
+        }
+    }
+    else{
+        if(frame[3] != 0x43){
+            return FALSE;
+        }
+    }
+
+    
+
+    for(int c = 4; c < size-2; c++){
+        BCC2 = BCC(frame[c], BCC2);
+    }
+
+    
+    if(BCC2 != frame[size-2]){
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+
+void handleIFrameState(char c, int* state){
+    switch(*state){
+        case 0:{
+            if(c==FLAG) *state = 1;
+
+            break;
+        }
+
+        case 1:{
+            if(c==A_EE) *state = 2;
+            else *state = 0;
+
+            break;
+        }
+
+        case 2:{
+            if(c==C_NS0 || c==C_NS1) *state = 3;
+            else *state = 0;  
+            
+            break;
+        }
+
+        case 3:{
+            
+            if(c==A_EE^C_NS0 || c==A_EE^C_NS1) *state = 4;
+            else *state = 0; 
+            
+            break;
+        }
+
+        case 4:{
+            if(c==FLAG) *state = 5;
+
+            break;
+        }
+    }
+}
+
+
 int llopen_receiver(char * port, int* fid){
   int fd, c, res;
   
@@ -117,49 +204,49 @@ int llopen_receiver(char * port, int* fid){
 
   printf("New termios structure set\n");
 
-  //openned port, starting connection procedure now
+  
   int SET_received = 0;
   int idx = 0;
   state_receiver = CONNECTING;
 
   while (state_receiver == CONNECTING){
-    //Receção do SET
+   
     printf(" - Receiving SET...\n");
     while (!STOP)
-    { /* loop for input */
+    {
       
       if((idx == 0) && (SET_received == 1)){
         clean_buf(buf_R,MAX_SIZE);
       }
       res = read(fd, &buf_R[idx], 1);
 
-      //Check se os valores são iguais aos expected -> se sim continua normalmente se não vai mudar o idx para repetir leitura
-      if( (idx == 0) && (SET_received == 1) && (buf_R[idx] == 0x02)){ //verifica se já está a receber o control packet START
+     
+      if( (idx == 0) && (SET_received == 1) && (buf_R[idx] == 0x02)){ 
         idx++;
         state_receiver=TRANSFERRING;
-        //receive_control_packet(buf_R, fd, ...);
+  
         break;
       }
 
-      if (checkSETByteRecieved(buf_R[idx], idx) == TRUE) //verifica se está a receber os bytes do SET corretos
+      if (checkSETByteRecieved(buf_R[idx], idx) == TRUE) 
         idx++;
-      else idx = 0; //volta ao início?
+      else idx = 0; 
 
       if (idx == 5){ 
         STOP = TRUE;
-        state_receiver=TRANSFERRING; //com isto domentado o programa corre, porém na versão final tem q esta descomentado
+        state_receiver=TRANSFERRING; 
       }
     }
 
-    if (STOP == TRUE) //se recebeu o SET corretamente, envia o UA para o Transmitter
+    if (STOP == TRUE) 
     {
-      //só faz print se valor correto
+    
       printData(buf_R, SU_TRAMA_SIZE, READ);
 
       sleep(2);
       printf("\n");
 
-      //Envio de UA
+  
       printf(" - Sending UA\n");
       if (writeData(fd, UA_R, SU_TRAMA_SIZE) < 0)
         perror("    Error writing UA\n");
@@ -179,14 +266,14 @@ int llclose_receiver(int fd){
   int DISC_received = 0;
   int res, idx = 0;
 
-  state_receiver=DISCONNECTING; //temporário!! serve para o codigo entrar no while
+  state_receiver=DISCONNECTING; 
 
-  //while disconneting
+
   while (state_receiver==DISCONNECTING)
   {
     
 
-    //Check se os valores são iguais aos expected -> se sim continua normalmente se não vai mudar o idx para repetir leitura
+  
     while(!STOP){
 
       res = read(fd, &buf_R[idx], 1);
@@ -200,13 +287,13 @@ int llclose_receiver(int fd){
         idx++;
       
       else{
-        idx = 0; //volta ao início?
+        idx = 0; 
       }
 
       if (idx == SU_TRAMA_SIZE){
         STOP = TRUE;
         DISC_received = 1;
-        //state==FINISHED;
+    
       }
 
     }
@@ -215,8 +302,6 @@ int llclose_receiver(int fd){
       printf(" - Received DISC...\n");
       printData(buf_R, SU_TRAMA_SIZE, READ);
 
-      //Send receiver disconnect
-      //Envio de DISC_R
       printf(" - Sending DISC_R\n");
       if (writeData(fd, DISC_R, SU_TRAMA_SIZE) < 0)
         perror("    Error writing DISC_R\n");
@@ -227,11 +312,10 @@ int llclose_receiver(int fd){
     STOP = FALSE;
     idx = 0;
 
-    //se receber disconnect sai do loop
+  
   }
 
   printf(" - Received UA_E...\n");
-  //só faz print se valor correto
   printData(buf_R, SU_TRAMA_SIZE, READ);
 
   

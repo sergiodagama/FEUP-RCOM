@@ -1,9 +1,13 @@
 #include "../includes/file.h"
 
 int get_file_size(FileInfo* fi, FILE * file){
-  fseek(file, 0, SEEK_END);
+  if (fseek(file, 0, SEEK_END) != 0){
+    return -1;
+  }
   fi->size = ftell(file); 
-  fseek(file, 0, SEEK_SET); 
+  if (fseek(file, 0, SEEK_SET) != 0){
+    return -1;
+  }
   return 0;
 }
 
@@ -21,11 +25,11 @@ int fillInfo(FileInfo* fi, FILE *file, char *file_name){
 
   fi->name = file_name;
   
-  if(get_file_size(fi, file)<0){ //preenche o file->size
+  if(get_file_size(fi, file)<0){
     return -1;
   }
 
-  if(read_file(fi, file)<0){//preenche o file->data
+  if(read_file(fi, file)<0){
     return -1;
   }
   return 0;
