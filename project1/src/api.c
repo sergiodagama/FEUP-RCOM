@@ -197,7 +197,7 @@ int llwrite(int fd, unsigned char* buffer, int length){
 
     if (STOP == TRUE)
     {
-        printf(" - Received RR...\n");
+        printf(" - Received RR...\n"); 
         printData(buf_RR, SU_TRAMA_SIZE, READ);
     }
 
