@@ -4,7 +4,7 @@
 int writeData(int fd, unsigned char *trama, int size){
   int res = 0, i = 0;
     while (i < size){
-      printf("  wr (%d) - 0x%x\n", i, trama[i]);
+      //printf("  wr (%d) - 0x%x\n", i, trama[i]);
       res = write(fd, &trama[i], 1);
       if(res < 0){
         perror("Error: writeData function call\n");

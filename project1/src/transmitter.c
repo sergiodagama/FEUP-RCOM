@@ -4,17 +4,17 @@
  * @brief Transmitter application layer main function
  * 
  * @param argc number of arguments passed to transmitter
- * @param argv the actual arguments -> ./[program_name] [port_file_name] [file_name_to_send]
+ * @param argv the actual arguments -> ./[program_name] [port_file_name] [file_name_to_send] [delay]
  * @return negatice value in case of error, 0 otherwise
  */
 int main(int argc, char** argv){
 
-    if(argc > 3){
+    if(argc > 4){
       perror("Input error: too many arguments\n");
       printf("Usage:\t[port_file_name] [file_name_to_send]\tex: /dev/ttyS10 ../pinguim.gif\n");
       return ERROR;
     }
-    else if(argc < 3){
+    else if(argc < 4){
       perror("Input error: too few arguments\n");
       printf("Usage:\t[port_file_name] [file_name_to_send]\tex: /dev/ttyS10 ../pinguim.gif\n");
       return ERROR;
@@ -27,6 +27,8 @@ int main(int argc, char** argv){
   
     
     int fd = ERROR;
+
+    unsigned int delay = atoi(argv[3]);
     
  
     ApplicationLayer transmitter;
@@ -75,14 +77,16 @@ int main(int argc, char** argv){
 
     ControlPacket control_p = createControlPacket(&file_info);
 
+    //printf("%u \n", delay);
+
     printf("-------Sending control packet------ \n");
     
+    sleep(delay);
 
    
     sendControlPacket(fd, START, control_p);
-
    
-    sendDataPacket(fd, &file_info);
+    sendDataPacket(fd, &file_info, delay);
 
     
     sendControlPacket(fd, END, control_p);

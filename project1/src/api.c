@@ -2,6 +2,9 @@
 
 extern int connect_attempt;
 
+int Nr = 0;
+int Ns = 1;
+
 int llopen(char* port, enum status stat, int* fid){
     if(stat == TRANSMITTER){
         if ((strcmp("/dev/ttyS0", port)!=0) && 
@@ -53,8 +56,6 @@ int llclose(int fd, enum status stat){
 
 
 
-int Ns = 1;
-
 int llwrite(int fd, unsigned char* buffer, int length){
 
     Ns = (Ns == 0) ? 1 : 0;
@@ -104,8 +105,10 @@ int llwrite(int fd, unsigned char* buffer, int length){
     int idx;
 
     connect_attempt = 1;
+
+    int timedout, STOP;
   
-    int SENDING = TRUE, STOP = FALSE;
+    int SENDING = TRUE;
 
     while(SENDING){
         if (connect_attempt > MAX_ATTEMPS){
@@ -127,22 +130,18 @@ int llwrite(int fd, unsigned char* buffer, int length){
         idx = 0;
         alarm(ALARM_SECONDS);
         int good_rr = TRUE;
+        STOP = FALSE;
 
-        int timedout = 0;
-        
+        timedout = 0;
         
 
 
         while (!STOP)
         {
-         
+
             if( (res = read(fd, &buf_RR[idx], 1)) < 0){
                 if (errno == EINTR){
                     timedout = 1;
-                    printf("    Timed Out attempt: \n\n");
-
-                    printf(" idx : %d\n", idx);
-                    printData(buf_RR, SU_TRAMA_SIZE, READ);
                     break;
                 }
                 else{
@@ -150,15 +149,20 @@ int llwrite(int fd, unsigned char* buffer, int length){
 
                 }
             }
+
             
             if(idx == 2 || idx == 3){
-            printf("idx(isRej) = %d\n", idx);
-             if (isRej(buf_RR[idx],idx, Ns)){ good_rr == FALSE; idx++;}
-             else if (checkRRByteRecieved(buf_RR, idx, Ns)) {idx++;}
-             else idx = 0;
+                
+                if (isRej(buf_RR[idx],idx, Ns) == TRUE){
+                    good_rr = FALSE; 
+                    idx++;
+                }
+
+                else if (checkRRByteRecieved(buf_RR, idx, Ns) == TRUE){idx++;}
+                else idx = 0;
             }
 
-            else if (checkRRByteRecieved(buf_RR, idx, Ns)){ 
+            else if (checkRRByteRecieved(buf_RR, idx, Ns) == TRUE){ 
                 idx++;
             }
             else
@@ -178,11 +182,9 @@ int llwrite(int fd, unsigned char* buffer, int length){
         else if(!good_rr){  
             printf(" - Received REJ...\n");
             printData(buf_RR, SU_TRAMA_SIZE, READ);
-            
-        
-            connect_attempt = 1;
+            connect_attempt++;
         }
-        else if (good_rr && timedout == 0) {
+        else if (good_rr) {
             SENDING = FALSE;
   
         }
@@ -203,9 +205,11 @@ int llwrite(int fd, unsigned char* buffer, int length){
 }
 
 
-int Nr = 0;
 
-int llread(int fd, unsigned char* buffer){
+
+int llread(int fd, unsigned char* buffer, unsigned int delay, unsigned int GenErrors){
+
+    unsigned int randNum;
 
     Nr = (Nr == 0) ? 1 : 0; 
 
@@ -219,9 +223,18 @@ int llread(int fd, unsigned char* buffer){
 
     frame = malloc(I_FRAME_SIZE);
     original = malloc(I_FRAME_SIZE);
+
+    int errorCreation;
     
 
     while(!STOP){
+        errorCreation = 0;
+
+        randNum = rand() % 1000;
+
+        if(randNum < GenErrors){
+            errorCreation = 1;
+        }
 
         while (stage <5) { 
     
@@ -236,7 +249,13 @@ int llread(int fd, unsigned char* buffer){
 
         }
 
+        sleep(delay);
+
         reverseByteStuffing(&index, frame, original);
+
+        if(errorCreation==1){
+            original[index-2] = 0xFF - original[index-2];
+        }
 
         if (checkDataFrame(original, Nr, index)){  
             STOP = TRUE;

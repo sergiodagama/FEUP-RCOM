@@ -14,52 +14,41 @@ void atende()
 }
 
 int checkRRByteRecieved(unsigned char* buf, int index, int Ns){
-    int is_OK = FALSE;
 
-    if ((index == 0 && buf[0] != FLAG) || (index == 4 && buf[4] != FLAG)){
-        return is_OK;        
+    if ((index == 0 && buf[0] == FLAG) || (index == 4 && buf[4] == FLAG)){
+        return TRUE;        
     }
-    if(index == 1 && buf[1] != A_EE){
-        return is_OK;
+    if(index == 1 && buf[1] == A_EE){
+        return TRUE;
     }
-    if(index == 2 && buf[2] != C_RR_NS1 && Ns == 0){
-        return is_OK;
+    if(index == 2 && buf[2] == C_RR_NS1){
+        return TRUE;
     }
-    if(index == 2 && buf[2] != C_RR_NS0 && Ns == 1){
-        return is_OK;
+    if(index == 2 && buf[2] == C_RR_NS0){
+        return TRUE;
     }
-    if(index == 3 && (buf[3] != (A_EE^C_RR_NS1)) && Ns == 0){
-        
-        return is_OK;
+    if(index == 3 && (buf[3] == (A_EE^C_RR_NS1))){
+        return TRUE;
     }
-    if(index == 3 && (buf[3] != (A_EE^C_RR_NS0)) && Ns == 1){
-        
-        return is_OK;
+    if(index == 3 && (buf[3] == (A_EE^C_RR_NS0))){
+        return TRUE;
     }
 
-    is_OK = TRUE;
-    return is_OK;
+    return FALSE;
 
 }
 
 
 int isRej(unsigned char c, int index,  int Ns){
-    if(index == 2){    
-        if(Ns == 0){
-            return c == C_REJ_NS0;
-        }
-        if(Ns == 1){
-            return c == C_REJ_NS1;
-        }
+   
+    if(index == 2){
+        if(c == 0x81 || c == 0x01) return TRUE;    
     }
     else if (index == 3) {
-        if(Ns == 0){
-            return c == 0x02;
-        }
-        if(Ns == 1){
-            return c == 0x82;
-        }
+      if (c == 0x82 || c == 0x02) return TRUE;
+        
     }
+    return FALSE;
 }
 
 int checkUAByteRecieved(unsigned char byte_recieved, int idx){

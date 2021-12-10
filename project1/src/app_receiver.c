@@ -18,13 +18,13 @@ int checkControlPacket(enum packet_id id, unsigned char* frame){
     }
 }
 
-unsigned long receiveStartPacket(int fd, unsigned char* name){
+unsigned long receiveStartPacket(int fd, unsigned char* name, unsigned int delay, unsigned int genErrors){
     unsigned char* packet = malloc(I_FRAME_SIZE);
 
     unsigned long file_size = 0; 
 
     while(TRUE){
-        llread(fd, packet);
+        llread(fd, packet, delay, genErrors);
     
 
         if(checkControlPacket(START, packet)){

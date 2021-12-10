@@ -48,7 +48,7 @@ ControlPacket createControlPacket(FileInfo* file_info){
   return control;
 }
 
-int sendDataPacket(int fd, FileInfo* file_info){   
+int sendDataPacket(int fd, FileInfo* file_info, unsigned int delay){   
   int quant = DATA_SIZE;
   int index = 0;
 
@@ -68,6 +68,8 @@ int sendDataPacket(int fd, FileInfo* file_info){
     printf("\t\t\tsize = %ld quant = %ld\n", s, quant);
 
     s -= quant;
+
+    sleep(delay);
     
     res = llwrite(fd, data, quant);
 

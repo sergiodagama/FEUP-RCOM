@@ -25,9 +25,11 @@
  * 
  * @param fd file descriptor of connection port file
  * @param name name of the file to be sent
+ * @param delay optional delay between reading the packet and sending the RR/REJ
+ * @param genErrors the odd between 0-100000 that the function will manually change a received byte to generate a error
  * 
  * @return size of the file to be sent
  */
- unsigned long receiveStartPacket(int fd, unsigned char* name);
+ unsigned long receiveStartPacket(int fd, unsigned char* name, unsigned int delay, unsigned int genErrors);
 
  #endif

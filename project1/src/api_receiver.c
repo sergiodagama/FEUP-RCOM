@@ -77,8 +77,6 @@ int checkDataFrame(unsigned char* frame, int Nr, int size){
         return TRUE;
     }
 
-    
-    printf("%d \n %x \n %x \n", Nr, frame[2], frame[3]);
     unsigned short BCC2 = 0;
 
     if(Nr){

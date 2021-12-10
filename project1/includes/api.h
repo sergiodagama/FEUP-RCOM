@@ -16,6 +16,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <termios.h>
+#include <time.h>
 
 #include "api_receiver.h"
 #include "api_transmitter.h"
@@ -26,6 +27,9 @@
  * @brief Application type
  * 
  */
+
+
+
 enum status {TRANSMITTER, RECEIVER};
 
 //controls the connection state in both sides separately
@@ -58,9 +62,12 @@ int llopen(char* port, enum status stat, int* fid);
  * 
  * @param fd file descriptor of connection port file
  * @param buffer characters array to be received
+ * @param delay optional delay between reading the packet and sending the RR/REJ
+ * @param genErrors the odd between 0-100000 that the function will manually change a received byte to generate a error
+ * 
  * @return number of characters read, negative value in case of error
  */
-int llread(int fd, unsigned char* buffer);
+int llread(int fd, unsigned char* buffer, unsigned int delay, unsigned int genErrors);
 
 /**
  * @brief Writes a data frame and receives response RR or REJ

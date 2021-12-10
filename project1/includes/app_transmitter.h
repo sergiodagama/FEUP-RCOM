@@ -39,7 +39,7 @@ int sendControlPacket(int fd, enum packet_id id, ControlPacket control_p);
  * 
  * @return 0 if successful, otherwise returns the number of bytes of the file that weren't sent
  */
-int sendDataPacket(int fd, FileInfo* file_info);
+int sendDataPacket(int fd, FileInfo* file_info, unsigned int delay);
 
 /**
  * @brief Constructs the control packet 

@@ -4,14 +4,14 @@
  * @brief Receiver application layer main function
  * 
  * @param argc number of arguments passed to receiver
- * @param argv the actual arguments -> ./[program_name] [port_file_name]
+ * @param argv the actual arguments -> ./[program_name] [port_file_name] [delay] [generate errors 0-100000]
  * @return negatice value in case of error, 0 otherwise 
  */
 
 int main(int argc, char** argv){
 
     // Checking for user input error
-    if(argc < 2){
+    if(argc < 4){
         perror("Input error: too few arguments\n");
         printf("Usage:\t[port_file_name]\tex: /dev/ttyS11\n");
         return ERROR;
@@ -22,6 +22,10 @@ int main(int argc, char** argv){
     printf("\n-----------CONNECTING----------\n\n");
 
     int fd = ERROR; //port file descriptor
+
+    unsigned int delay = atoi(argv[2]);
+
+    unsigned int genErrors = atoi(argv[3]);
     
     ApplicationLayer receiver;
     receiver.status = RECEIVER;
@@ -48,9 +52,10 @@ int main(int argc, char** argv){
      
     strcpy(file_name, "files/receive/");
 
+    srand(time(NULL));
 
     
-    file_size = receiveStartPacket(fd, name);
+    file_size = receiveStartPacket(fd, name, delay, genErrors);
 
     strcat(file_name, name); 
 
@@ -75,7 +80,7 @@ int main(int argc, char** argv){
         clean_buf(data, DATA_SIZE);
 
     
-        llread(fd, packet);
+        llread(fd, packet, delay, genErrors);
        
 
         if(checkControlPacket(END, packet) == TRUE){
