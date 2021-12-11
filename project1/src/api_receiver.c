@@ -228,8 +228,6 @@ int llopen_receiver(char * port, int* fid){
 
     if (STOP == TRUE) 
     {
-    
-      //printData(buf_R, SU_TRAMA_SIZE, READ);
 
       sleep(2);
       printf("\n");
@@ -288,7 +286,6 @@ int llclose_receiver(int fd){
 
     if(STOP && state_receiver!=FINISHED){
       printf(" - Received DISC...\n");
-      //printData(buf_R, SU_TRAMA_SIZE, READ);
 
       printf(" - Sending DISC_R\n");
       if (writeData(fd, DISC_R, SU_TRAMA_SIZE) < 0)
@@ -304,7 +301,6 @@ int llclose_receiver(int fd){
   }
 
   printf(" - Received UA_E...\n");
-  //printData(buf_R, SU_TRAMA_SIZE, READ);
 
   
   printf("    Receiver Disconnecting, Adios!...\n");
