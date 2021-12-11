@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "byte_stuffing.h": "c"
+        "byte_stuffing.h": "c",
+        "xlsxwriter.h": "c"
     }
 }

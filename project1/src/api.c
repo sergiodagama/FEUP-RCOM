@@ -181,8 +181,8 @@ int llwrite(int fd, unsigned char* buffer, int length){
         
         else if(!good_rr){  
             printf(" - Received REJ...\n");
-            printData(buf_RR, SU_TRAMA_SIZE, READ);
-            connect_attempt++;
+            //printData(buf_RR, SU_TRAMA_SIZE, READ);
+            connect_attempt++;  //comment to test error efficiency
         }
         else if (good_rr) {
             SENDING = FALSE;
@@ -198,7 +198,7 @@ int llwrite(int fd, unsigned char* buffer, int length){
     if (STOP == TRUE)
     {
         printf(" - Received RR...\n"); 
-        printData(buf_RR, SU_TRAMA_SIZE, READ);
+        //printData(buf_RR, SU_TRAMA_SIZE, READ);
     }
 
     return res;

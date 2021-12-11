@@ -120,35 +120,25 @@ void handleIFrameState(char c, int* state){
     switch(*state){
         case 0:{
             if(c==FLAG) *state = 1;
-
             break;
         }
-
         case 1:{
             if(c==A_EE) *state = 2;
             else *state = 0;
-
             break;
         }
-
         case 2:{
             if(c==C_NS0 || c==C_NS1) *state = 3;
             else *state = 0;  
-            
             break;
         }
-
         case 3:{
-            
             if(c==A_EE^C_NS0 || c==A_EE^C_NS1) *state = 4;
             else *state = 0; 
-            
             break;
         }
-
         case 4:{
             if(c==FLAG) *state = 5;
-
             break;
         }
     }
@@ -239,7 +229,7 @@ int llopen_receiver(char * port, int* fid){
     if (STOP == TRUE) 
     {
     
-      printData(buf_R, SU_TRAMA_SIZE, READ);
+      //printData(buf_R, SU_TRAMA_SIZE, READ);
 
       sleep(2);
       printf("\n");
@@ -298,7 +288,7 @@ int llclose_receiver(int fd){
 
     if(STOP && state_receiver!=FINISHED){
       printf(" - Received DISC...\n");
-      printData(buf_R, SU_TRAMA_SIZE, READ);
+      //printData(buf_R, SU_TRAMA_SIZE, READ);
 
       printf(" - Sending DISC_R\n");
       if (writeData(fd, DISC_R, SU_TRAMA_SIZE) < 0)
@@ -314,7 +304,7 @@ int llclose_receiver(int fd){
   }
 
   printf(" - Received UA_E...\n");
-  printData(buf_R, SU_TRAMA_SIZE, READ);
+  //printData(buf_R, SU_TRAMA_SIZE, READ);
 
   
   printf("    Receiver Disconnecting, Adios!...\n");

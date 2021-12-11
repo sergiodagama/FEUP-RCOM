@@ -1,4 +1,5 @@
 #include "../includes/app_receiver.h"
+#include <time.h>
 
 /**
  * @brief Receiver application layer main function
@@ -73,7 +74,13 @@ int main(int argc, char** argv){
     unsigned char* data = malloc(DATA_SIZE);
     int idx = 0;
     int NOT_END = TRUE;
-    
+
+    FILE *fp_test;
+    fp_test = fopen("test_data.txt", "a");
+
+    struct timespec begin, end; 
+    clock_gettime(CLOCK_REALTIME, &begin);
+
     while(NOT_END){
 
         clean_buf(packet, I_FRAME_SIZE);
@@ -93,13 +100,18 @@ int main(int argc, char** argv){
             data[i] = packet[i+4];
             
         }
-
         
         fwrite(data, 1, DATA_SIZE, file_fd1);
 
         idx++;
     }
 
+    clock_gettime(CLOCK_REALTIME, &end);
+    long seconds = end.tv_sec - begin.tv_sec;
+    long nanoseconds = end.tv_nsec - begin.tv_nsec;
+    double elapsed = seconds + nanoseconds*1e-9;
+
+    fprintf(fp_test, "%lu %f\n", file_size, elapsed);
 
     close(file_fd1);
     

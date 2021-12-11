@@ -27,9 +27,6 @@
  * @brief Application type
  * 
  */
-
-
-
 enum status {TRANSMITTER, RECEIVER};
 
 //controls the connection state in both sides separately

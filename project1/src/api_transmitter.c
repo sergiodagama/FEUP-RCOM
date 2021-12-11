@@ -186,9 +186,9 @@ int llopen_transmitter(char* port, int *fid){
 
     alarm(0); 
 
-    if (STOP == TRUE){
-        printData(buf_E, SU_TRAMA_SIZE, READ);
-    }
+    // if (STOP == TRUE){
+    //     printData(buf_E, SU_TRAMA_SIZE, READ);
+    // }
   }
 
   printf("\nAll OK on sender!\n");
@@ -251,7 +251,7 @@ int llclose_transmitter(int fd){
 
     }
   
-    printData(buf_E, SU_TRAMA_SIZE, READ);
+    //printData(buf_E, SU_TRAMA_SIZE, READ);
 
      
     printf(" - Sending UA_E...\n");

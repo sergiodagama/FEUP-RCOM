@@ -67,6 +67,7 @@ int sendDataPacket(int fd, FileInfo* file_info, unsigned int delay){
 
     printf("\t\t\tsize = %ld quant = %ld\n", s, quant);
 
+
     s -= quant;
 
     sleep(delay);
