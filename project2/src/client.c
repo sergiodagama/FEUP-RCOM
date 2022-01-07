@@ -9,7 +9,6 @@ void write_cmd(int sockfd, char *cmd, char *arg){
 }
 
 char * read_reply(int sockfd){
-	char code;
 	char *r = malloc(1024);
 	
 	size_t n = 0;
@@ -27,27 +26,20 @@ char * read_reply(int sockfd){
 }
 
 int give_credentials(url_data *data, int sockfd){
-    char r;
+    char * r;
     write_cmd(sockfd, "user ", data->user);
 	r = read_reply(sockfd);
-	if(r == '4' || r == '5'){
+	if(r[0] == '4' || r[0] == '5'){
 		close(sockfd);
 		return -1;
 	}
 
 	write_cmd(sockfd, "pass ", data->password);
 	r = read_reply(sockfd);
-	if(r == '4' || r == '5'){
+	if(r[0] == '4' || r[0] == '5'){
 		close(sockfd);
 		return -1;
 	}
-    return 0;
-}
-
-int check_reply(char r){
-    if((r=='4') || r=='5'){
-        return -1;
-    }
     return 0;
 }
 
@@ -77,9 +69,6 @@ int connect_socket(char * ip_addr, int port){
 }
 
 int activate_passive_mode(int sockfd){
-    char first_byte[4];
-	char second_byte[4];
-	
 	write_cmd(sockfd, "pasv", "");
 	
 	char *res = malloc(1024);
@@ -93,43 +82,19 @@ int activate_passive_mode(int sockfd){
     strtok(res, "(");
     char * args = strtok(NULL, ")");
 
-    printf("args: %s\n", args);
 
-	int ip[4], port[2];
+	int ip[4];
+	int port[2];
+
 	sscanf(args, "%d,%d,%d,%d,%d,%d", &ip[0], &ip[1], &ip[2], &ip[3], &port[0], &port[1]);
-
-    printf("ip: %d,%d,%d,%d\n", ip[0], ip[1], ip[2], ip[3]);
-    printf("port: %d,%d\n", port[0], port[1]);
 
     free(res);
 
     return port[0] * 256 + port[1];
-
-    // int c = 0;
-    // while (c<strlen(res)){
-    //     if(res[c] == '('){
-    //         c++;
-    //         break;
-    //     }
-    //     c++;
-    // }
-
-    // char * resValues = malloc(strlen(res)-c-1);
-    // for(int s = c; s < strlen(res)-1; s++){
-    //     resValues[s] =res[s];
-    // }
-        
-
-	// strtok(resValues, ",");
-	// for(int i=0; i<4; i++) strcpy(first_byte, strtok(NULL, ","));
-	// strcpy(second_byte, strtok(NULL, ","));
-
-	// free(res);
-    // free(resValues);
-	// return atoi(first_byte)*256 + atoi(second_byte);
 }
 
 int download_file(int sockfd, char * url_path){
+	printf("Task: downloading file...\n");
     char* filename = basename(url_path);
 
 	FILE *f = fopen(filename, "wb+");

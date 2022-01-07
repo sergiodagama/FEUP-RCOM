@@ -23,8 +23,6 @@ char * read_reply(int sockfd);
 
 int give_credentials(url_data *data, int sockfd);
 
-int check_reply(char r);
-
 int connect_socket(char * ip_addr, int port);
 
 int activate_passive_mode(int sockfd);
