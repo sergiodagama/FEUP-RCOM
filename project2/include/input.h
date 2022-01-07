@@ -17,4 +17,6 @@ typedef struct{
 
 int inputCheck(char *ur, url_data *data);
 
+int url_converter(char *url, url_data *data);
+
 #endif  

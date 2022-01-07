@@ -1,15 +1,29 @@
 #include "../include/download.h"
 
-struct hostent* get_ip(char *hostname){
-    struct hostent *h;
+/**
+ * The struct hostent (host entry) with its terms documented
 
+    struct hostent {
+        char *h_name;    // Official name of the host.
+        char **h_aliases;    // A NULL-terminated array of alternate names for the host.
+        int h_addrtype;    // The type of address being returned; usually AF_INET.
+        int h_length;    // The length of the address in bytes.
+        char **h_addr_list;    // A zero-terminated array of network addresses for the host.
+        // Host addresses are in Network Byte Order.
+    };
+
+    #define h_addr h_addr_list[0]	The first address in h_addr_list.
+*/
+struct hostent* get_ip(char *hostname){
+    // struct hostent *h = (struct hostent *) malloc(sizeof(struct hostent));
+    struct hostent *h;
     if ((h = gethostbyname(hostname) == NULL)) {
         herror("gethostbyname()");
         exit(-1);
     }
 
-    printf("Host name  : %s\n", h->h_name);
-    printf("IP Address : %s\n", inet_ntoa(*((struct in_addr *) h->h_addr)));
+    // printf("Host name  : %s\n", h->h_name);
+    // printf("IP Address : %s\n", inet_ntoa(*((struct in_addr *) h->h_addr)));
 
     return h;
 }
@@ -17,58 +31,137 @@ struct hostent* get_ip(char *hostname){
 
 
 
+/*./download ftp://[<user>:<password>@]<host>/<url-path>*/
 int main(int argc, char *argv[]){
-    if (argc > 1)
+    printf("%s \n", argv[1]);
+    if (argc > 2)
         printf("**** No arguments needed. They will be ignored. Carrying ON.\n");
 
-    url_data *data;
+    url_data *data = (url_data*)malloc(sizeof(url_data));
 
     if (inputCheck(argv[1], data) < 0){
         printf("Invalid url\n");
         return -1;
     }
+
+    printf("Finished input check\n");
+
+    printf("host: %s \n", data->host);
     
-
-    
-    int sockfd;
-    struct sockaddr_in server_addr;
-    char buf[] = "Mensagem de teste na travessia da pilha TCP/IP\n";
-    size_t bytes;
-
-    /*server address handling*/
-    bzero((char *) &server_addr, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = inet_addr(SERVER_ADDR);    /*32 bit Internet address network byte ordered*/
-    server_addr.sin_port = htons(SERVER_PORT);        /*server TCP port must be network byte ordered */
-
-    /*open a TCP socket*/
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        perror("socket()");
-        exit(-1);
-    }
-    /*connect to the server*/
-    if (connect(sockfd,
-                (struct sockaddr *) &server_addr,
-                sizeof(server_addr)) < 0) {
-        perror("connect()");
-        exit(-1);
+    struct hostent *h;
+    if (( h = gethostbyname(data->host)) == NULL){
+        printf("Error getting IP\n");
+        return -1;
     }
 
+    printf("Got the ip\n");
+
+    int sockReq;
+
+    /*connect to server ------------------------------------------------*/
+
+    char *ip_addr = inet_ntoa(*((struct in_addr *)h->h_addr));
+
+    printf("here\n");
+
+    if(ip_addr == NULL){
+        printf("IP null\n");
+        return -1;
+    }
     
 
-    // /*send a string to the server*/
-    // bytes = write(sockfd, buf, strlen(buf));
-    // if (bytes > 0)
-    //     printf("Bytes escritos %ld\n", bytes);
-    // else {
-    //     perror("write()");
-    //     exit(-1);
-    // }
+    printf("IP: %s\n", ip_addr);
 
-    if (close(sockfd)<0) {
+
+    sockReq = connect_socket(ip_addr, SERVER_PORT);
+
+    printf("Finished connecting to socket\n");
+
+    /*read connect response*/
+
+    char * response;
+    response = read_reply(sockReq);
+    if((response[0]=='4') || response[0]=='5'){
+        close(sockReq);
+        return -1;
+    }
+
+    printf("Finished connecting to server 1\n");
+
+
+    /*login ------------------------------------------------*/
+
+    if (give_credentials(data, sockReq) < 0){
+        printf("Error sending credentials \n");
+        return -1;
+    }
+
+    printf("Finished login\n");
+
+    /*enter passive mode ------------------------------------------------*/
+
+
+
+    int port = activate_passive_mode(sockReq);
+
+    if(port == -1){
+        printf("Failed to activate passive mode\n");
+        return -1;
+    }
+
+    printf("Finished activating passive mode\n");
+
+    /*connect to the server ------------------------------------------------*/
+
+    int sockReceive = connect_socket(ip_addr, port);
+
+    printf("Finished connecting to server 2\n");
+
+
+    /*save file ------------------------------------------------ */
+    write_cmd(sockReq, "retr ", data->url_path);
+	response = read_reply(sockReq);
+    if((response[0]=='4') || response[0]=='5'){
+        close(sockReq);
+        return -1;
+    }
+
+    printf("Sended retr cmd\n");
+
+	download_file(sockReceive, data->url_path);
+	response = read_reply(sockReq);
+    if((response[0]=='4') || response[0]=='5'){
+        close(sockReq);
+        return -1;
+    }
+
+    printf("Finished downloading the file\n");
+
+	// Quit
+
+	write_cmd(sockReq, "quit", "");
+	response = read_reply(sockReq);
+    if((response[0]=='4') || response[0]=='5'){
+        close(sockReq);
+        return -1;
+    }
+
+    printf("Sended quit cmd\n");
+
+    /*exit ------------------------------------------------*/
+
+
+    if (close(sockReq)<0) {
         perror("close()");
         exit(-1);
     }
+    if (close(sockReceive)<0) {
+        perror("close()");
+        exit(-1);
+    }
+
+    free(data);
+    free(response);
     return 0;
 }
 
