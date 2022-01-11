@@ -111,7 +111,7 @@ ifconfig eth1 172.16.21.253/24
 echo 1 > /proc/sys/net/ipv4/ip_forward
 
 # Disable ICMP echo ignore broadcast.
-# echo 0 > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts
+echo 0 > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts
 
 # PC 3 
 ip route add 172.16.21.0/24 via 172.16.20.254
